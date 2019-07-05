@@ -1,6 +1,4 @@
 #!/bin/bash
-sudo apt install postgresql
-sudo service postgresql start
 sudo -u postgres psql -c "CREATE DATABASE cs348;"
 # use "sudo -u postgres psql" to connect to postgres CLI.
 # once in CLI use "\c cs348" to connect to the database.
