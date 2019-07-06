@@ -1,5 +1,7 @@
 const pg = require('pg');
+
 // Find connection info by typing /conninfo from psql
+// Default port is usually 5432
 const pool = new pg.Pool({
     user: 'postgres',
     host: 'localhost',
@@ -8,6 +10,7 @@ const pool = new pg.Pool({
     port: '5433',
 });
 
+// Export the function for use by server.js
 exports.getVenues = getVenues;
 
 async function getVenues() {
