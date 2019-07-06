@@ -5,11 +5,11 @@ var app = express();
 
 app.use(express.static('./html'));
 app.get('/', (req, res) => {
-    res.sendfile(__dirname + '/html/webapp.html');
+    res.sendFile(__dirname + '/html/webapp.html');
 });
 app.get('/venues_db', async (req, res) => {
     try {
-        const data = await db.getVenues();
+        const data = await db.getVenues(req.query);
         res.send(data);
     } catch (e) {
         console.log(e);

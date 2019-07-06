@@ -11,28 +11,39 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
     <script>
         function insertVenueRow(data) {
-            $('<tr><td>' + data['name'] + '</td>'
-                    + '<td>' + data['address'] + '</td></tr>'
+            $('<tr><td>' + data['venue_name'] + '</td>'
+                    + '<td>' + data['venue_address'] + '</td>'
+					+ '<td>' + data['max_capacity'] + '</td>'
+					+ '<td>' + data['cost_per_hour'] + '</td>'
+					+ '</tr>'
             ).appendTo($('#venue_data'));
         }
-
-        // Make a call to db on load to get the venue data and display it
-        $.get(
-            "venues_db",
-            {},
-            // data is an array of json objects
-            (data) => {
-                for (var i = 0; i < data.length; i++) {
-                    insertVenueRow(data[i]);
-                }
-            }
-        );
+		
+		function getVenues() {
+			// Make a call to db on load to get the venue data and display it
+			$.get(
+				"/venues_db",
+				{
+					name : $('[name="name"]')[0].value,
+					capacity : $('[name="capacity"]')[0].value,
+					price : $('[name="price"]')[0].value,
+				},
+				// data is an array of json objects
+				(data) => {
+					$('#venue_data > tr').remove();
+					for (var i = 0; i < data.length; i++) {
+						insertVenueRow(data[i]);
+					}
+				},
+				'json'
+			);
+		}
     </script>
 </head>
 <body>
     <div class="container-fluid" style="background-color:#d0d3d8;padding:0px">
         <div style="padding: 15px">
-        <h1>Web App Title</h1>
+        <h1>Perfect Parrty</h1>
         </div>
         <nav class="navbar navbar-expand bg-primary navbar-dark">
             <ul class="navbar-nav mr-auto">
@@ -49,14 +60,38 @@
                     <a class="nav-link" href="#">Booked Events</a>
                 </li>
             </ul>
-            <form class="form-inline ml-auto" action="/action_page.php">
-                <input class="form-control mr-sm-2" type="text" placeholder="Search">
-                <button class="btn btn-success" type="submit">Search</button>
-            </form>
         </nav>
     </div>
-    <div>
-        <h1> Hello World </h1>
+	
+    <div class="container" style="margin:15px">
+		<h3>Filters</h3>			
+		<form class="form ml-auto" onsubmit="return false">
+			
+			<div class="row">
+			<div class="form-group col-xs-5 col-lg-3">
+				<label>Venue Name</label>
+				<input name="name" class="form-control" type="text" placeholder="Name">
+			</div>
+			</div>
+			
+			<div class="row">
+			<div class="form-group col-xs-5 col-lg-3">
+				<label>Desired Capacity</label>
+				<input name="capacity" class="form-control" type="text" placeholder="Capacity">
+			</div>
+			</div>
+			
+			<div class="row">
+			<div class="form-group col-xs-5 col-lg-3">
+				<label>Max Price</label>
+				<input name="price" class="form-control" type="text" placeholder="Price">
+			</div>
+			</div>
+			
+			<div class="row">
+				<button type="submit" class="btn btn-success" onclick="getVenues()">Apply Filters</button>
+			</div>		
+		</form>
     </div>
     <div>
         <table class="table table-hover">
@@ -64,6 +99,8 @@
                 <tr>
                     <th>Name</th>
                     <th>Address</th>
+					<th>Max Capacity</th>
+					<th>Price per Hour</th>
                 </tr>
             </thead>
             <tbody id="venue_data">

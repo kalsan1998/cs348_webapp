@@ -10,19 +10,29 @@ const pool = new pg.Pool({
 
 exports.getVenues = getVenues;
 
-async function getVenues() {
+async function getVenues(params) {
+	var clauses = [];
+	var vals = [];
+	if (params.name) {
+		clauses.push("venue_name ILIKE $" + (vals.length  + 1 ));
+		vals.push('%' + params.name + '%');
+	}
+	if (params.capacity) {
+		clauses.push("max_capacity >= $" + (vals.length  + 1 ));
+		vals.push(params.capacity);
+	}
+	if (params.price) {
+		clauses.push("cost_per_hour  <= $" + (vals.length  + 1 ));
+		vals.push(params.price);
+	}
+	var query = "SELECT venue_name, venue_address, max_capacity, cost_per_hour FROM venue";
+	if (clauses.length > 0) {
+		query += " WHERE " + clauses.join(" AND ");
+	}
+	query += ";";
     const client = await pool.connect();
     const data = [];
-    const res = await client.query("SELECT venue_name, venue_address FROM venue;");
-    res.rows.forEach(row => {
-        data.push(
-            {
-                'name' : row['venue_name'],
-                'address' : row['venue_address']
-            }
-        );
-    });
+    const res = await client.query(query, vals);
     await client.release();
-    console.log(data);
-    return data;
+    return res.rows;
 }
