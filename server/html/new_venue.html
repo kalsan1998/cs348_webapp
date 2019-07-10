@@ -1,0 +1,104 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Venues</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="common.js"></script>
+    <script>
+		function createVenue() {
+			// Make a call to db on load to get the venue data and display it
+			$.post(
+				"/create_venue",
+				{
+					name : $('[name="name"]')[0].value,
+					capacity : $('[name="capacity"]')[0].value,
+                    price : $('[name="price"]')[0].value,
+                    address : $('[name="address"]')[0].value,
+                    description : $('[name="price"]')[0].value,
+                },
+                // Success
+				(res) => {
+                   displaySuccess("Successfully created Venue");
+				},
+			).fail((err) => {
+                console.log(err);
+                displayError("Failed to create Venue.");
+            });
+		}
+    </script>
+</head>
+<body>
+    <div id="header" class="container-fluid" style="background-color:#d0d3d8;padding:0px">
+        <div style="padding: 15px">
+        <h1>Perfect Party</h1>
+        </div>
+        <nav class="navbar navbar-expand bg-primary navbar-dark">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="./webapp.html">Home</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="#">Venues</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Suppliers</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Booked Events</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+	<div id="content">
+    <a href="venues.html">View Venues</a>
+    <div class="container" style="margin:15px">
+		<form class="form ml-auto" onsubmit="return false">
+			
+			<div class="row">
+			<div class="form-group col-xs-5 col-lg-3">
+				<label>Venue Name</label>
+				<input name="name" class="form-control" type="text" placeholder="Name">
+			</div>
+            </div>
+
+            <div class="row">
+                <div class="form-group col-xs-5 col-lg-3">
+                    <label>Venue Addres</label>
+                    <input name="address" class="form-control" type="text" placeholder="Address">
+                </div>
+            </div>
+            
+			<div class="row">
+			<div class="form-group col-xs-5 col-lg-3">
+				<label>Max Capacity</label>
+				<input name="capacity" class="form-control" type="text" placeholder="Capacity">
+			</div>
+			</div>
+			
+			<div class="row">
+			<div class="form-group col-xs-5 col-lg-3">
+				<label>Price Per Hour</label>
+				<input name="price" class="form-control" type="text" placeholder="Price">
+			</div>
+            </div>
+            
+            <div class="row">
+                <div class="form-group col-xs-5 col-lg-3">
+                    <label>Description (Optional)</label>
+                    <textarea name="description" class="form-control" type="text" placeholder="Description"></textarea>
+                </div>
+            </div>
+			
+			<div class="row">
+				<button type="submit" class="btn btn-success" onclick="createVenue()">Create Venue</button>
+			</div>		
+		</form>
+    </div>
+</body>
+</html>

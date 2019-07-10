@@ -9,6 +9,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="common.js"></script>
     <script>
         // Display data in the table on the html page
         function insertVenueRow(data) {
@@ -22,7 +23,7 @@
 		function getVenues() {
 			// Make a call to db on load to get the venue data and display it
 			$.get(
-				"/venues_db",
+				"/venues",
 				{
 					name : $('[name="name"]')[0].value,
 					capacity : $('[name="capacity"]')[0].value,
@@ -30,20 +31,23 @@
 				},
 				// data is an array of json objects
 				(data) => {
+                    console.log(data);
 					$('#venue_data > tr').remove();
 					for (var i = 0; i < data.length; i++) {
 						insertVenueRow(data[i]);
 					}
 				},
 				'json'
-			);
+			).fail(() => {
+                displayError("Failed to retrieve data.");
+            });
 		}
     </script>
 </head>
 <body>
-    <div class="container-fluid" style="background-color:#d0d3d8;padding:0px">
+    <div id="header" class="container-fluid" style="background-color:#d0d3d8;padding:0px">
         <div style="padding: 15px">
-        <h1>Perfect Parrty</h1>
+        <h1>Perfect Party</h1>
         </div>
         <nav class="navbar navbar-expand bg-primary navbar-dark">
             <ul class="navbar-nav mr-auto">
@@ -62,7 +66,8 @@
             </ul>
         </nav>
     </div>
-	
+	<div id="content">
+    <a href="new_venue.html">Add a Venue</a>
     <div class="container" style="margin:15px">
 		<h3>Filters</h3>			
 		<form class="form ml-auto" onsubmit="return false">
@@ -106,6 +111,7 @@
             <tbody id="venue_data">
             </tbody>
         </table>
+    </div>
     </div>
 
 </body>

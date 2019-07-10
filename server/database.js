@@ -10,8 +10,10 @@ const pool = new pg.Pool({
     port: '5433',
 });
 
-// Export the function for use by server.js
+// Export the functions for use by server.js
 exports.getVenues = getVenues;
+exports.insertVenue = insertVenue;
+
 
 async function getVenues(params) {
 	var clauses = [];
@@ -34,8 +36,18 @@ async function getVenues(params) {
 	}
 	query += ";";
     const client = await pool.connect();
-    const data = [];
     const res = await client.query(query, vals);
     await client.release();
     return res.rows;
+}
+
+async function insertVenue(params) {
+	var query = `INSERT INTO venue(venue_name, description, 
+		max_capacity, venue_address, cost_per_hour) 
+		VALUES($1,$2,$3,$4,$5);`;
+	const vals = [params.name, params.description, params.capacity, params.address, params.price];
+	const client = await pool.connect();
+	await client.query(query, vals);
+    await client.release();
+    return 0;
 }
