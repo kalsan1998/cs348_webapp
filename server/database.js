@@ -30,11 +30,11 @@ async function getVenues(params) {
 		clauses.push("cost_per_hour  <= $" + (vals.length  + 1 ));
 		vals.push(params.price);
 	}
-	var query = "SELECT venue_name, venue_address, max_capacity, cost_per_hour FROM venue";
+	var query = "SELECT * FROM venue";
 	if (clauses.length > 0) {
 		query += " WHERE " + clauses.join(" AND ");
 	}
-	query += ";";
+	query += " ORDER BY venue_name;";
     const client = await pool.connect();
     const res = await client.query(query, vals);
     await client.release();
@@ -49,5 +49,4 @@ async function insertVenue(params) {
 	const client = await pool.connect();
 	await client.query(query, vals);
     await client.release();
-    return 0;
 }

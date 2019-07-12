@@ -3,7 +3,7 @@ CREATE TABLE venue(
   venue_name VARCHAR(64) NOT NULL,
   description VARCHAR(256),
   max_capacity INTEGER NOT NULL CHECK(max_capacity >= 0),
-  venue_address VARCHAR(24) NOT NULL,
+  venue_address VARCHAR(24) UNIQUE NOT NULL,
   cost_per_hour DECIMAL(6,2) NOT NULL,
   PRIMARY KEY (venue_id)
 );

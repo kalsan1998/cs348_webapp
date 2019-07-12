@@ -1,0 +1,36 @@
+#header {
+    background-color:#d0d3d8;
+    padding: 0px;
+    margin-left: 0px;
+    margin-right: 0px;
+    margin-bottom: 15px;
+}
+
+#header-title {
+    padding: 15px;
+}
+
+.nav-drop {
+    padding-top: 0px !important;
+    margin: 0px !important;
+    left: inherit !important;
+    top: 97% !important;
+}
+
+.dropdown-item {
+    color: rgba(255,255,255,.5) !important;
+}
+
+.dropdown-item:hover {
+    color: rgba(255,255,255) !important;
+    background-color: rgb(0, 123, 255) !important;
+}
+
+
+#filters {
+    margin-bottom: 15px;
+}
+
+.filter-row {
+    margin-bottom: 15px;
+}
