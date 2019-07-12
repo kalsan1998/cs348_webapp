@@ -37,4 +37,15 @@ app.post('/create_venue', async (req, res) => {
     }
 });
 
+app.post('/delete_venue', async (req, res) => {
+    try {
+        await db.deleteVenue(req.body.id);
+        res.send(200);
+    } catch (e) {
+        // Probably should do better error handling.
+        console.log(e);
+        res.send(500);
+    }
+});
+
 app.listen(3000, () => console.log('Listening on http://localhost:3000/'));

@@ -13,6 +13,7 @@ const pool = new pg.Pool({
 // Export the functions for use by server.js
 exports.getVenues = getVenues;
 exports.insertVenue = insertVenue;
+exports.deleteVenue = deleteVenue;
 
 
 async function getVenues(params) {
@@ -48,5 +49,12 @@ async function insertVenue(params) {
 	const vals = [params.name, params.description, params.capacity, params.address, params.price];
 	const client = await pool.connect();
 	await client.query(query, vals);
+    await client.release();
+}
+
+async function deleteVenue(id) {
+	var query = `DELETE FROM venue WHERE venue_id=$1;`;
+	const client = await pool.connect();
+	await client.query(query, [id]);
     await client.release();
 }

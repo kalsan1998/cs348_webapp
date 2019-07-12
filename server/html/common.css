@@ -26,11 +26,18 @@
     background-color: rgb(0, 123, 255) !important;
 }
 
-
 #filters {
     margin-bottom: 15px;
 }
 
 .filter-row {
     margin-bottom: 15px;
+}
+
+.delete-btn:hover span{
+    color: #d61111;
+}
+
+.edit-btn:hover span{
+    color: #e3cd22;
 }

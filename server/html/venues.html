@@ -6,6 +6,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" href="common.css">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
@@ -18,14 +19,19 @@
 
         // Display data in the table on the html page
         function insertVenueRow(data) {
-            $('<tr>'
-                    + '<td style="display:none;">' + data['venue_id'] + '</td>'
-                    + '<td>' + data['venue_name'] + '</td>'
-                    + '<td>' + data['venue_address'] + '</td>'
-					+ '<td>' + data['max_capacity'] + '</td>'
-                    + '<td>' + data['cost_per_hour'] + '</td>'
-                    + '<td>' + data['description'] + '</td>'
-					+ '</tr>'
+            $(`
+                <tr entry_id="${data['venue_id']}">
+                    <td align="center">${data['venue_name']}</td>
+                    <td align="center">${data['venue_address']}</td>
+					<td align="center">${data['max_capacity']}</td>
+                    <td align="center">${data['cost_per_hour']}</td>
+                    <td align="center">${data['description']}</td>
+                    <td align="center">
+                        <button class="btn edit-btn"><span class="fa fa-pencil"></span></button>
+                        <button class="btn delete-btn" onclick="deleteVenue(${data['venue_id']})"><span class="fa fa-trash"></span></button>
+                    </td>
+                </tr>
+            `
             ).appendTo($('#venue_data'));
         }
 		function getVenues() {
@@ -48,7 +54,23 @@
 			).fail(() => {
                 displayError("Failed to retrieve data.");
             });
-		}
+        }
+        function deleteVenue(del_id) {
+			$.post(
+				"/delete_venue",
+				{
+					id : del_id
+				},
+				() => {
+                    const row = $(`#venue_data > tr[entry_id="${del_id}"]`)
+					row.fadeOut('normal', () => {
+                        row.remove();
+                    });
+				},
+			).fail(() => {
+                displayError("Failed to delete venue.");
+            });
+        }
     </script>
 </head>
 <body>
@@ -84,11 +106,12 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Address</th>
-                        <th>Max Capacity</th>
-                        <th>Price per Hour</th>
-                        <th>Description</th>
+                        <th class="text-center">Name</th>
+                        <th class="text-center">Address</th>
+                        <th class="text-center">Max Capacity</th>
+                        <th class="text-center">Price per Hour</th>
+                        <th class="text-center">Description</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody id="venue_data">
