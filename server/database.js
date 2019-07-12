@@ -13,6 +13,7 @@ const pool = new pg.Pool({
 // Export the functions for use by server.js
 exports.getVenues = getVenues;
 exports.insertVenue = insertVenue;
+exports.updateVenue = updateVenue;
 exports.deleteVenue = deleteVenue;
 
 
@@ -50,6 +51,25 @@ async function insertVenue(params) {
 	const client = await pool.connect();
 	await client.query(query, vals);
     await client.release();
+}
+
+async function updateVenue(params) {
+	// Returns the updated row.
+	var query = `
+		UPDATE venue SET
+			venue_name=$2,
+			venue_address=$3,
+			max_capacity=$4,
+			cost_per_hour=$5,
+			description=$6
+		WHERE venue_id=$1
+		RETURNING *;
+	`;
+	const vals = [params.id, params.name, params.address, params.capacity, params.price, params.description];
+	const client = await pool.connect();
+	const row = await client.query(query, vals);
+	await client.release();
+	return row;
 }
 
 async function deleteVenue(id) {

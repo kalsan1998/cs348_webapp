@@ -21,7 +21,7 @@
 					capacity : $('[name="capacity"]')[0].value,
                     price : $('[name="price"]')[0].value,
                     address : $('[name="address"]')[0].value,
-                    description : $('[name="price"]')[0].value,
+                    description : $('[name="description"]')[0].value,
                 },
                 // Success
 				(res) => {
@@ -80,7 +80,7 @@
                 
                 <div class="row">
                     <div class="col">
-                    <button type="submit" class="btn btn-success" onclick="createVenue()">Create Venue</button>
+                    <button type="submit" class="btn btn-success" onclick="this.blur(); createVenue()">Create Venue</button>
                     </div>
                 </div>		
             </form>

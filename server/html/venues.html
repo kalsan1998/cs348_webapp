@@ -17,9 +17,8 @@
             getVenues();
         });
 
-        // Display data in the table on the html page
-        function insertVenueRow(data) {
-            $(`
+        function createVenueRowHtml(data) {
+            return `
                 <tr entry_id="${data['venue_id']}">
                     <td align="center">${data['venue_name']}</td>
                     <td align="center">${data['venue_address']}</td>
@@ -27,12 +26,15 @@
                     <td align="center">${data['cost_per_hour']}</td>
                     <td align="center">${data['description']}</td>
                     <td align="center">
-                        <button class="btn edit-btn"><span class="fa fa-pencil"></span></button>
+                        <button class="btn edit-btn" onclick="editVenue(${data['venue_id']})"><span class="fa fa-pencil"></span></button>
                         <button class="btn delete-btn" onclick="deleteVenue(${data['venue_id']})"><span class="fa fa-trash"></span></button>
                     </td>
                 </tr>
-            `
-            ).appendTo($('#venue_data'));
+            `;
+        }
+        // Display data in the table on the html page
+        function insertVenueRow(data) {
+            $(createVenueRowHtml(data)).appendTo($('#venue_data'));
         }
 		function getVenues() {
 			// Make a call to db on load to get the venue data and display it
@@ -62,13 +64,39 @@
 					id : del_id
 				},
 				() => {
-                    const row = $(`#venue_data > tr[entry_id="${del_id}"]`)
+                    const row = $(`#venue_data > tr[entry_id="${del_id}"]`);
 					row.fadeOut('normal', () => {
                         row.remove();
                     });
 				},
 			).fail(() => {
                 displayError("Failed to delete venue.");
+            });
+        }
+        function editVenue(edit_id) {
+            const row = $(`#venue_data > tr[entry_id="${edit_id}"]`).eq(0);
+            makeRowEditable(row, 'submitVenueEdits');
+        }
+        function submitVenueEdits(edit_id) {
+            const data = $(`#venue_data > tr[entry_id="${edit_id}"] > td > input`);
+            $.post(
+				"/update_venue",
+                {
+                    id : edit_id,
+                    name : data[0].value,
+                    address : data[1].value,
+                    capacity : data[2].value,
+                    price : data[3].value,
+                    description : data[4].value,
+                },
+                // Success
+				(res) => {
+                    $(`#venue_data > tr[entry_id="${edit_id}"]`)
+                        .replaceWith(createVenueRowHtml(res.rows[0]));
+				},
+			).fail((err) => {
+                console.log(err);
+                displayError("Failed to update Venue.");
             });
         }
     </script>
@@ -98,7 +126,7 @@
                 </div>
                 <div class="row">
                     <div class="col">
-                        <button type="submit" class="btn btn-success" onclick="getVenues()">Apply Filters</button>
+                        <button type="submit" class="btn btn-success" onclick="this.blur(); getVenues()">Apply Filters</button>
                     </div>
                 </div>
         </div>

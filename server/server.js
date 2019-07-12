@@ -37,6 +37,17 @@ app.post('/create_venue', async (req, res) => {
     }
 });
 
+app.post('/update_venue', async (req, res) => {
+    try {
+        const data = await db.updateVenue(req.body);
+        res.send(data);
+    } catch (e) {
+        // Probably should do better error handling.
+        console.log(e);
+        res.send(500);
+    }
+});
+
 app.post('/delete_venue', async (req, res) => {
     try {
         await db.deleteVenue(req.body.id);

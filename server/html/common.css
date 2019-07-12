@@ -41,3 +41,11 @@
 .edit-btn:hover span{
     color: #e3cd22;
 }
+
+.submit-edit-btn span{
+    color: #0e820c;
+}
+
+.cancel-edit-btn span{
+    color: #d61111;
+}
