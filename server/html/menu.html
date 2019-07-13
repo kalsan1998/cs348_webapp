@@ -24,6 +24,7 @@
         function createMenuRowHtml(data) {
             return `
                 <tr entry_id="${data['supplier_id']+'&'+data['supply_name']}">
+                    <td align="center">${data['company_name']}</td>
                     <td align="center">${data['supply_name']}</td>
                     <td align="center">${data['is_vegetarian'] ? "Yes" : "No"}</td>
 					<td align="center">${data['is_vegan'] ? "Yes" : "No"}</td>
@@ -54,6 +55,7 @@
                     price : $('[name="price"]')[0].value,
                     is_gluten_free : $('input[name="gluten"]').is(':checked'),
                     is_halal : $('input[name="halal"]').is(':checked'),
+                    servings : $('[name="servings"]')[0].value
 				},
 				// data is an array of json objects
 				(data) => {
@@ -70,7 +72,7 @@
 
         function editMenu(edit_id) {
             const row = $(`#menu_data > tr[entry_id="${edit_id}"]`).eq(0);
-            makeRowEditable(row, 'submitMenuEdits', [0], [1,2,3,4]);
+            makeRowEditable(row, 'submitMenuEdits', [0,1], [2,3,4,5]);
         }
         
         function submitMenuEdits(edit_id) {
@@ -138,6 +140,11 @@
                         <label>Max Price</label>
                         <input name="price" class="form-control" type="text" placeholder="Price">
                     </div>
+
+                    <div class="col">
+                        <label>Minimum Servings</label>
+                        <input name="servings" class="form-control" type="text" placeholder="Minimum Servings per Order">
+                    </div>
                 </div>
                 <div class="row filter-row pull-center ml-4" >
                     <div class="col">
@@ -167,15 +174,16 @@
                 </div>
         </div>
         <div id="table-display">
-            <table class="table table-hover">
+            <table class="table table-hover bm-4">
                 <thead>
                     <tr>
+                        <th class="text-center">Supplier</th>
                         <th class="text-center">Name</th>
                         <th class="text-center">Is Vegetarian?</th>
                         <th class="text-center">Is Vegan?</th>
                         <th class="text-center">Is Gluten Free?</th>
                         <th class="text-center">Is Halal?</th>
-                        <th class="text-center">Servings per Quantity</th>
+                        <th class="text-center">Servings per Order</th>
                         <th class="text-center">Price per Quantity</th>
                         <th class="text-center">Description</th>
                         <th></th>

@@ -120,8 +120,13 @@ async function getMenu(params) {
 		clauses.push("price_per_quantity  <= $" + (vals.length  + 1 ));
 		vals.push(params.price);
 	}
-	var query = "SELECT * FROM food_item INNER JOIN supply ON food_item.supplier_id \
-		= supply.supplier_id AND food_item.supply_name = supply.supply_name";
+	if(params.servings) {
+		clauses.push("servings_per_quantity >= $" + (vals.length + 1));
+		vals.push(params.servings);
+	}
+	var query = "SELECT * FROM (food_item INNER JOIN supply ON food_item.supplier_id \
+		= supply.supplier_id) INNER JOIN supplier ON food_item.supplier_id = supplier.supplier_id \
+		AND food_item.supply_name = supply.supply_name";
 	if (clauses.length > 0) {
 		query += " WHERE " + clauses.join(" AND ");
 	}
@@ -190,9 +195,10 @@ async function updateMenu(params) {
 	await client.query(query, vals);
 	
 	// Return query.
-	var res_query = "SELECT * FROM food_item INNER JOIN supply ON food_item.supplier_id \
-		= supply.supplier_id AND food_item.supply_name = supply.supply_name \
-		WHERE supply.supplier_id=$1 AND supply.supply_name=$2";
+	var res_query = "SELECT * FROM (food_item INNER JOIN supply ON food_item.supplier_id \
+		= supply.supplier_id AND food_item.supply_name = supply.supply_name) INNER JOIN \
+		supplier ON food_item.supplier_id = supplier.supplier_id WHERE \
+		supply.supplier_id=$1 AND supply.supply_name=$2";
 	const res_vals = [params.supplier_id, params.supply_name];
 
 	const row = await client.query(res_query, res_vals);
