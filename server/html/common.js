@@ -23,8 +23,11 @@ function displaySuccess(text) {
 }
 
 // Make sure that the last item in the row is for edit/delete buttons
-// submit_function_text should be something like "submit_venue"
-function makeRowEditable(row, submit_function_name) {
+// submit_function_text should be something like "submit_venue".
+// Columns that have index inside |except| will not be made editable.
+// Columns with index inside |checkbox| will be turned into a checkbox instead
+// of a textbox.
+function makeRowEditable(row, submit_function_name, except=[], checkbox=[]) {
     // This will store the original values.
     const hidden_div = $(`
         <div style="display:none">
@@ -37,19 +40,33 @@ function makeRowEditable(row, submit_function_name) {
         // https://stackoverflow.com/questions/40462236/jquery-appends-as-text-instead-of-html
         const entry = entries.eq(i);
         hidden_div.append(entry.clone());
+
+        if (except.includes(i)) continue;
         
         const current_text = entry.text();
-        entry.html(`
-            <input type="text" value="${current_text}">
-        `);
+        if (checkbox.includes(i)) {
+            if (current_text === "Yes") {
+                entry.html(`
+                    <input type="checkbox" checked>
+                `);
+            } else {
+                entry.html(`
+                    <input type="checkbox">
+                `);
+            }
+        } else {
+            entry.html(`
+                <input type="text" value="${current_text}">
+            `);
+        }
     }
     const buttons_td = entries.eq(i);
     hidden_div.append(buttons_td.clone());
     row.prepend(hidden_div);
 
     buttons_td.html(`
-        <button class="btn submit-edit-btn" onclick="${submit_function_name}(${row.attr('entry_id')})"><span class="fa fa-check"></span></button>
-        <button class="btn cancel-edit-btn" onclick="revertRowEdit(${row.attr('entry_id')})"><span class="fa fa-remove"></span></button>
+        <button class="btn submit-edit-btn" onclick="${submit_function_name}('${row.attr('entry_id')}')"><span class="fa fa-check"></span></button>
+        <button class="btn cancel-edit-btn" onclick="revertRowEdit('${row.attr('entry_id')}')"><span class="fa fa-remove"></span></button>
     `);
 }
 

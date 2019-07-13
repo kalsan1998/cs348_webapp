@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Menu</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="common.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="common.js"></script>
+    <script>
+        $(document).ready(() => {
+            fillSupplier();
+        });
+
+        function createSupplierNameHtmlEntry(data) {
+            return `<option value="${data['supplier_id']}">${data['company_name']}</option>`;
+        }
+
+        function insertSupplierNameEntry(data) {
+            $(createSupplierNameHtmlEntry(data)).appendTo($("#select-supplier"));
+        }
+
+		function createMenu() {
+            var params = {
+					supplier_id : $('#select-supplier').val(),
+					supply_name : $('[name="name"]')[0].value,
+                    description : $('[name="description"]')[0].value,
+                    price_per_quantity : $('[name="price"]')[0].value,
+                    min_quantity : $('[name="min"]')[0].value,
+                    max_quantity : $('[name="max"]')[0].value,
+                    is_vegetarian : $('input[name="vegetarian"]').is(':checked'),
+                    is_vegan : $('input[name="vegan"]').is(':checked'),
+                    is_halal : $('input[name="halal"]').is(':checked'),
+                    is_gluten_free : $('input[name="gluten"]').is(':checked'),
+                    servings_per_quantity : $('[name="serve"]')[0].value,
+                };
+			$.post(
+				"/create_menu",
+				params,
+                // Success
+				(res) => {
+                    window.location.href = "menu.html#success";
+				},
+			).fail((err) => {
+                console.log(err);
+                displayError("Failed to create new Menu Item");
+            });
+        }
+
+        function fillSupplier() {
+            $.get(
+                "/supplier_name",
+                {},
+                (data) => {
+                    for (var i = 0; i < data.length; i++) {
+						insertSupplierNameEntry(data[i]);
+					}
+                }
+            ).fail((err) => {
+                console.log(err);
+            });
+        }
+    </script>
+</head>
+<body>
+    <!-- Header dynamically loaded by common.js -->
+    <div id="header-load"></div>
+    <script>loadHeader("menu-nav")</script>
+
+	<div id="content">
+        <div class="container-fluid">
+            <form class="form ml-auto" onsubmit="return false">
+                <div class="row">
+                <div class="form-group col-3">
+                    <label>Supplier</label>
+                    <select class="form-control" id="select-supplier">
+                    </select>
+                </div>
+                </div>
+                
+                <div class="row">
+                <div class="form-group col-3">
+                    <label>Menu Item Name</label>
+                    <input name="name" class="form-control" type="text" placeholder="Name" id="name">
+                </div>
+                </div>
+                
+                <div class="row">
+                <div class="form-group col-3">
+                    <label>Price per Quantity</label>
+                    <input name="price" class="form-control" type="text" placeholder="Price">
+                </div>
+                </div>
+                
+                <div class="row">
+                <div class="form-group col-3">
+                    <label>Minimum Order Quantity</label>
+                    <input name="min" class="form-control" type="text" placeholder="Min Quantity">
+                </div>
+                </div>
+
+                <div class="row">
+                <div class="form-group col-3">
+                    <label>Maximum Order Quantity</label>
+                    <input name="max" class="form-control" type="text" placeholder="Max Quantity">
+                </div>
+                </div>
+
+                <div class="row">
+                <div class="form-group col-3">
+                    <label>Servings per Quantity</label>
+                    <input name="serve" class="form-control" type="text" placeholder="Servings">
+                </div>
+                </div>
+
+                <div class="row">
+                <div class="form-group col-3 ml-4">
+                    <input name="vegetarian" class="form-check-input" type="checkbox" id="vegetarian-check">
+                    <label class="form-check-label" for="vegetarian-check">Is Vegetarian?</label>
+                </div>
+                </div>
+
+                <div class="row">
+                <div class="form-group col-3 ml-4">
+                    <input name="vegan" class="form-check-input" type="checkbox" id="vegan-check">
+                    <label class="form-check-label" for="vegan-check">Is Vegan?</label>
+                </div>
+                </div>
+
+                <div class="row">
+                <div class="form-group col-3 ml-4">
+                    <input name="gluten" class="form-check-input" type="checkbox" id="gluten-check">
+                    <label class="form-check-label" for="gluten-check">Is Gluten Free?</label>
+                </div>
+                </div>
+
+                <div class="row">
+                <div class="form-group col-3 ml-4">
+                    <input name="halal" class="form-check-input" type="checkbox" id="halal-check">
+                    <label class="form-check-label" for="halal-check">Is Halal?</label>
+                </div>
+                </div>
+                
+                <div class="row">
+                    <div class="form-group col-4">
+                        <label>Description (Optional)</label>
+                        <textarea name="description" class="form-control" type="text" placeholder="Description"></textarea>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col">
+                    <button type="submit" class="btn btn-success" onclick="this.blur(); createMenu()">Create New Menu Item</button>
+                    </div>
+                </div>		
+            </form>
+        </div>
+    </div>
+</body>
+</html>

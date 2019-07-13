@@ -15,6 +15,10 @@
     <script>    
         $(document).ready(() => {
             getVenues();
+            if (window.location.hash === '#success') {
+                displaySuccess("Successfully created a new venue entry");
+                window.history.replaceState(null, "", "venues.html");
+            }
         });
 
         function createVenueRowHtml(data) {

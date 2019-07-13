@@ -13,8 +13,7 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/html/webapp.html');
 });
 
-// The venues.html file makes a GET request when it loads.
-// This will call the following code, which queries the database.
+// Venues related code.
 app.get('/venues', async (req, res) => {
     try {
         const data = await db.getVenues(req.query);
@@ -51,6 +50,63 @@ app.post('/update_venue', async (req, res) => {
 app.post('/delete_venue', async (req, res) => {
     try {
         await db.deleteVenue(req.body.id);
+        res.send(200);
+    } catch (e) {
+        // Probably should do better error handling.
+        console.log(e);
+        res.send(500);
+    }
+});
+
+// Supply related code.
+// Returns a list of supplier name.
+app.get('/supplier_name', async (req, res) => {
+    try {
+        const data = await db.getSupplierNames(req.query);
+        res.send(data);
+    } catch (e) {
+        console.log(e);
+        res.send(500);
+    }
+});
+
+// Food related code.
+app.get('/menu', async (req, res) => {
+    try {
+        const data = await db.getMenu(req.query);
+        res.send(data);
+    } catch (e) {
+        // Probably should do better error handling.
+        console.log(e);
+        res.send(500);
+    }
+});
+
+app.post('/create_menu', async (req, res) => {
+    try {
+        await db.insertMenu(req.body);
+        res.send(200);
+    } catch (e) {
+        // Probably should do better error handling.
+        console.log(e);
+        res.send(500);
+    }
+});
+
+app.post('/update_menu', async (req, res) => {
+    try {
+        const data = await db.updateMenu(req.body);
+        res.send(data);
+    } catch (e) {
+        // Probably should do better error handling.
+        console.log(e);
+        res.send(500);
+    }
+});
+
+app.post('/delete_menu', async (req, res) => {
+    try {
+        await db.deleteMenu([req.body.supplier_id, req.body.supply_name]);
         res.send(200);
     } catch (e) {
         // Probably should do better error handling.
