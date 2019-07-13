@@ -1,0 +1,143 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Client List</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="common.css">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="common.js"></script>
+    <script>    
+        $(document).ready(() => {
+            getClients();
+            if (window.location.hash === '#addsuccess') {
+                displaySuccess("Successfully added a new client");
+                window.history.replaceState(null, "", "clients.html");
+            }
+            if (window.location.hash === '#delete') {
+                displaySuccess("Successfully deleted a client");
+                window.history.replaceState(null, "", "clients.html");
+            }
+        });
+
+        function createClientRowHtml(data) {
+            return `
+                <tr entry_id="${data['email']}">
+                    <td align="center">${data['first_name']}</td>
+                    <td align="center">${data['last_name']}</td>
+					<td align="center">${data['email']}</td>
+                    <td align="center">${data['home_address']}</td>
+                    <td align="center">${data['phone_number']}</td>
+                    <td align="center">${data['number_booked_events']}</td>
+                    <td align="center">${data['total_paid']}</td>
+                    <td align="center">
+                        <button class="btn edit-btn" onclick="clientDetail('${data['email']}')"><span class="fa fa-info"></span></button>
+                    </td>
+                </tr>
+            `;
+        }
+        // Display data in the table on the html page
+        function insertClientRow(data) {
+            $(createClientRowHtml(data)).appendTo($('#clients_data'));
+        }
+		function getClients() {
+			// Make a call to db on load to get the venue data and display it
+			$.get(
+				"/clients",
+				{
+					first_name : $('[name="first_name"]')[0].value,
+					last_name : $('[name="last_name"]')[0].value,
+                    email : $('[name="email"]')[0].value,
+                    min_paid : $('[name="min_paid"]')[0].value,
+                    min_events : $('[name="min_events"]')[0].value,
+				},
+				// data is an array of json objects
+				(data) => {
+					$('#clients_data > tr').remove();
+					for (var i = 0; i < data.length; i++) {
+						insertClientRow(data[i]);
+					}
+				},
+				'json'
+			).fail(() => {
+                displayError("Failed to retrieve data.");
+            });
+        }
+
+        function clientDetail(client_id) {
+            const url = "client_detail.html?email=" + encodeURIComponent(client_id);
+            window.location = url;
+        }
+    </script>
+</head>
+<body>
+    <!-- Header dynamically loaded by common.js -->
+    <div id="header-load"></div>
+    <script>loadHeader("clients-nav")</script>
+	<div id="content">
+        <div id="filters" class="container-fluid">
+            <h3>Filters</h3>			
+                <div class="row filter-row">
+                    <div class="col">
+                        <label>First Name</label>
+                        <input name="first_name" class="form-control" type="text" placeholder="First Name">
+                    </div>
+                    
+                    <div class="col">
+                        <label>Last name</label>
+                        <input name="last_name" class="form-control" type="text" placeholder="Last Name">
+                    </div>
+                    
+                    <div class="col">
+                        <label>Email Address</label>
+                        <input name="email" class="form-control" type="text" placeholder="Email Address">
+                    </div>	
+                </div>
+                <div class="row filter-row">
+                        <div class="col">
+                            <label>Minimum Number of Booked Events</label>
+                            <input name="min_events" class="form-control" type="text" placeholder="# of Booked Events">
+                        </div>
+                        
+                        <div class="col">
+                            <label>Minimum Amount of Money Paid</label>
+                            <input name="min_paid" class="form-control" type="text" placeholder="Amount Paid">
+                        </div>
+
+                        <div class="col">
+
+                        </div>
+                    </div>
+                <div class="row">
+                    <div class="col">
+                        <button type="submit" class="btn btn-success" onclick="this.blur(); getClients()">Apply Filters</button>
+                    </div>
+                </div>
+        </div>
+        <div id="table-display">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th class="text-center">First Name</th>
+                        <th class="text-center">Last Name</th>
+                        <th class="text-center">Email Address</th>
+                        <th class="text-center">Home Address</th>
+                        <th class="text-center">Phone Number</th>
+                        <th class="text-center">Number of Booked Events</th>
+                        <th class="text-center">Total Money Paid</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="clients_data">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>

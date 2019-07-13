@@ -88,13 +88,13 @@ CREATE TABLE billing_information(
   cvv CHAR(3) NOT NULL,
   billing_address VARCHAR(24) NOT NULL,
   client_email VARCHAR(24) NOT NULL,
-  date_addded DATE NOT NULL,
+  date_added DATE NOT NULL,
   PRIMARY KEY (billing_id),
   FOREIGN KEY (client_email) REFERENCES client (email) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE event(
-  billed_to INTEGER,
+  billed_to SERIAL,
   venue_id SERIAL,
   event_datetime TIMESTAMP,
   event_duration TIME,
@@ -109,7 +109,7 @@ CREATE TABLE event(
 );
 
 CREATE TABLE supply_order(
-  billed_to INTEGER,
+  billed_to SERIAL,
   venue_id SERIAL,
   event_datetime TIMESTAMP,
   supplier_id SERIAL,
@@ -120,4 +120,3 @@ CREATE TABLE supply_order(
   FOREIGN KEY (billed_to, venue_id, event_datetime) REFERENCES event (billed_to, venue_id, event_datetime) ON DELETE CASCADE ON UPDATE CASCADE,
   FOREIGN KEY (supplier_id, supply_name) REFERENCES supply (supplier_id, supply_name) ON DELETE CASCADE ON UPDATE CASCADE
 );
-

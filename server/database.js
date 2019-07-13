@@ -12,14 +12,28 @@ const pool = new pg.Pool({
 
 // Export the functions for use by server.js
 exports.getSupplierNames = getSupplierNames;
+
 exports.getVenues = getVenues;
 exports.insertVenue = insertVenue;
 exports.updateVenue = updateVenue;
 exports.deleteVenue = deleteVenue;
+
 exports.getMenu = getMenu;
 exports.insertMenu = insertMenu;
 exports.updateMenu = updateMenu;
 exports.deleteMenu = deleteMenu;
+
+exports.getClients = getClients;
+exports.updateClient = updateClient;
+exports.addClient = addClient;
+exports.deleteClient = deleteClient;
+exports.getClientEvent = getClientEvent;
+
+exports.getClientBilling = getClientBilling;
+exports.deleteBillingInfo = deleteBillingInfo;
+exports.addBillingInfo = addBillingInfo;
+
+exports.deleteEvent = deleteEvent;
 
 
 async function getVenues(params) {
@@ -93,11 +107,38 @@ async function getSupplierNames(params) {
 	return res.rows;
 }
 
+async function insertSupply(params) {
+	var query = `INSERT INTO supply(supplier_id, supply_name, description,
+		price_per_quantity, min_quantity, max_quantity)
+		VALUES($1, $2, $3, $4, $5, $6);`;
+	const vals = [params.supplier_id, params.supply_name, params.description, 
+		params.price_per_quantity, params.min_quantity, params.max_quantity];
+	const client = await pool.connect();
+	await client.query(query, vals);
+	await client.release();
+}
+
+async function updateSupply(params) {
+	var query = `
+		UPDATE supply SET
+			description=$3,
+			price_per_quantity=$4,
+			min_quantity=$5,
+			max_quantity=$6
+		WHERE supplier_id=$1 AND supply_name=$2;
+	`;
+	const vals = [params.supplier_id, params.supply_name, params.description, 
+		params.price_per_quantity, params.min_quantity, params.max_quantity];
+	const client = await pool.connect();
+	await client.query(query, vals);
+	await client.release();
+}
+
 async function getMenu(params) {
 	var clauses = [];
 	var vals = [];
 	if (params.name) {
-		clauses.push("supply_name ILIKE $" + (vals.length  + 1 ));
+		clauses.push("food_item.supply_name ILIKE $" + (vals.length  + 1 ));
 		vals.push('%' + params.name + '%');
 	}
 	if (params.is_vegetarian && params.is_vegetarian === 'true') {
@@ -135,33 +176,6 @@ async function getMenu(params) {
     const res = await client.query(query, vals);
     await client.release();
     return res.rows;
-}
-
-async function insertSupply(params) {
-	var query = `INSERT INTO supply(supplier_id, supply_name, description,
-		price_per_quantity, min_quantity, max_quantity)
-		VALUES($1, $2, $3, $4, $5, $6);`;
-	const vals = [params.supplier_id, params.supply_name, params.description, 
-		params.price_per_quantity, params.min_quantity, params.max_quantity];
-	const client = await pool.connect();
-	await client.query(query, vals);
-	await client.release();
-}
-
-async function updateSupply(params) {
-	var query = `
-		UPDATE supply SET
-			description=$3,
-			price_per_quantity=$4,
-			min_quantity=$5,
-			max_quantity=$6
-		WHERE supplier_id=$1 AND supply_name=$2;
-	`;
-	const vals = [params.supplier_id, params.supply_name, params.description, 
-		params.price_per_quantity, params.min_quantity, params.max_quantity];
-	const client = await pool.connect();
-	await client.query(query, vals);
-	await client.release();
 }
 
 async function insertMenu(params) {
@@ -215,5 +229,160 @@ async function deleteMenu(id) {
 	const client = await pool.connect();
 	await client.query(query1, id);
 	await client.query(query2, id);
+    await client.release();
+}
+
+async function getClients(params) {
+	var clauses = [];
+	var vals = [];
+
+	// WHERE clause builder
+	if (params.first_name) {
+		clauses.push("app_user.first_name ILIKE $" + (vals.length  + 1 ));
+		vals.push('%' + params.first_name + '%');
+	}
+	if (params.last_name) {
+		clauses.push("app_user.last_name ILIKE $" + (vals.length  + 1 ));
+		vals.push('%' + params.last_name + '%');
+	}
+	if (params.email) {
+		clauses.push("app_user.email ILIKE $" + (vals.length  + 1 ));
+		vals.push('%' + params.email + '%');
+	}
+
+	// SELECT clause
+	query = "SELECT app_user.first_name as first_name, app_user.last_name as last_name, \
+		app_user.email as email, home_address, phone_number, \
+		COALESCE(SUM(event.total_cost), 0) as total_paid, \
+		COUNT(billed_to) as number_booked_events \
+		FROM ((app_user INNER JOIN client ON app_user.email = client.email) LEFT OUTER JOIN \
+		billing_information ON billing_information.client_email = app_user.email) LEFT OUTER JOIN \
+		event ON billing_information.billing_id = event.billed_to";
+	
+	// WHERE clause
+	if (clauses.length > 0) {
+		query += " WHERE " + clauses.join(" AND ");
+	}
+
+	// GROUP BY clause
+	query += " GROUP BY app_user.email, app_user.last_name, app_user.email, home_address, \
+		phone_number";
+	
+	// HAVING clauses
+	if (params.min_paid || params.min_events) {
+		query += " HAVING true";
+	}
+	if (params.min_paid) {
+		query += " AND COALESCE(SUM(event.total_cost), 0) >= $" + (vals.length + 1);
+		vals.push(params.min_paid);
+	}
+	if (params.min_events) {
+		query += " AND COUNT(billed_to) >= $" + (vals.length + 1);
+		vals.push(params.min_events);
+	}
+
+	// ORDER BY clause
+	query += " ORDER BY app_user.first_name;";
+
+    const client = await pool.connect();
+	const res = await client.query(query, vals);
+	await client.release();
+    return res.rows;
+}
+
+async function updateClient(params) {
+	var query = `
+		UPDATE client SET
+			home_address=$2,
+			phone_number=$3
+		WHERE email=$1
+		RETURNING *;
+	`;
+	const vals = [params.email, params.home_address, params.phone_number];
+	const client = await pool.connect();
+	const row = await client.query(query, vals);
+	await client.release();
+	return row;
+}
+
+async function addClient(params) {
+	var query1 = "INSERT INTO app_user(email, password, first_name, last_name) \
+		VALUES($1, $2, $3, $4);";
+	var query2 = "INSERT INTO client(email, home_address, phone_number) \
+		VALUES($1, $2, $3);";
+	var vals1 = [params.email, "password", params.first_name, params.last_name];
+	var vals2 = [params.email, params.home_address, params.phone_number];
+	const client = await pool.connect();
+	await client.query(query1, vals1);
+	await client.query(query2, vals2);
+    await client.release();
+}
+
+async function deleteClient(params) {
+	var query1 = 
+		`DELETE FROM client WHERE email=$1;`;
+	var query2 = 
+		`DELETE FROM app_user WHERE email=$1;`;
+	const client = await pool.connect();
+	await client.query(query1, [params.email]);
+	await client.query(query2, [params.email]);
+    await client.release();
+}
+
+async function getClientBilling(params) {
+	var query = "SELECT billing_id, card_number, cardholder_name, billing_address, \
+		to_char(date_added, 'dd-mm-yyyy') as date_added, COUNT(billed_to) as events_booked, \
+		COALESCE(SUM(total_cost), 0) as amount_paid \
+		FROM billing_information LEFT OUTER JOIN event ON \
+		billing_information.billing_id = event.billed_to \
+		WHERE client_email = $1 \
+		GROUP BY billing_id, card_number, cardholder_name, billing_address \
+		ORDER BY date_added;";
+	var vals = [params.email];
+    const client = await pool.connect();
+    const res = await client.query(query, vals);
+    await client.release();
+    return res.rows;
+}
+
+async function deleteBillingInfo(params) {
+	var query = "DELETE FROM billing_information \
+		WHERE billing_id=$1;";
+	var vals = [params.billing_id];
+	const client = await pool.connect();
+	await client.query(query, vals);
+    await client.release();
+}
+
+async function addBillingInfo(params) {
+	var query = "INSERT INTO billing_information(card_number, expiration_date, \
+		cardholder_name, cvv, billing_address, client_email, date_added) \
+		VALUES($1, $2, $3, $4, $5, $6, current_timestamp);";
+	var vals = [params.card_number, params.expiration_date, params.cardholder_name,
+		params.cvv, params.billing_address, params.client_email];
+	const client = await pool.connect();
+	await client.query(query, vals);
+	await client.release();
+}
+
+async function getClientEvent(params) {
+	var query = "SELECT * FROM (event INNER JOIN venue ON event.venue_id = \
+		venue.venue_id) INNER JOIN billing_information ON \
+		event.billed_to = billing_information.billing_id WHERE \
+		billing_information.client_email = $1;";
+	var vals = [params.email];
+	const client = await pool.connect();
+	const res = await client.query(query, vals);
+	await client.release();
+	return res.rows;
+}
+
+// id[0] = billed_to, id[1] = venue_id, id[2] = event_datetime
+async function deleteEvent(id) {
+	var query = "DELETE FROM event \
+		WHERE billed_to=$1 AND venue_id=$2 AND event_datetime=$3;";
+	var vals = [id[0], id[1], id[2]];
+	const client = await pool.connect();
+	await client.query(query, vals);
     await client.release();
 }

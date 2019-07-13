@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>New Billing Information</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="common.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="common.js"></script>
+    <script>
+        var email = null;
+
+        $(document).ready(() => {
+            const url = new URL(window.location);
+            const e = url.searchParams.get("email");
+            if (!e) {
+                window.location = "clients.html";
+            }
+            email = e;
+        });
+
+		function createBilling() {
+            if ($('[name="card_number"]')[0].value.length != 16 || 
+                ! $('[name="card_number"]')[0].value.match(/^[0-9]*$/) ){
+                displayError("Card number must be exactly 16 digits long.");
+                return;
+            }
+            if (!$('[name="expiration"]')[0].value.match(/^[0-9][0-9][0-9][0-9]$/) ) {
+                displayError("Expiration date format is mmyy.");
+                return;
+            }if (!$('[name="cvv"]')[0].value.match(/^[0-9][0-9][0-9]$/) ) {
+                displayError("CVV must be exactly 3 digits long.");
+                return;
+            }
+			$.post(
+				"/create_billing",
+				{
+					card_number : $('[name="card_number"]')[0].value,
+					expiration_date : $('[name="expiration"]')[0].value,
+                    cardholder_name : $('[name="name"]')[0].value,
+                    cvv : $('[name="cvv"]')[0].value,
+                    billing_address : $('[name="address"]')[0].value,
+                    client_email : email
+                },
+                // Success
+				(res) => {
+                    const url = "client_detail.html?email=" + encodeURIComponent(email) +
+                        "#billingsuccess";
+                    window.location = url;
+				},
+			).fail((err) => {
+                console.log(err);
+                displayError("Failed to create new billing information.");
+            });
+		}
+    </script>
+</head>
+<body>
+    <!-- Header dynamically loaded by common.js -->
+    <div id="header-load"></div>
+    <script>loadHeader("clients-nav")</script>
+
+	<div id="content">
+        <div class="container-fluid">
+            <form class="form ml-auto" onsubmit="return false">
+                
+                <div class="row">
+                <div class="form-group col-3">
+                    <label>Card Number</label>
+                    <input name="card_number" class="form-control" type="text" placeholder="WWWWXXXXYYYYZZZZ">
+                </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group col-3">
+                        <label>Expiration Date</label>
+                        <input name="expiration" class="form-control" type="text" placeholder="mmyy">
+                    </div>
+                </div>
+                
+                <div class="row">
+                <div class="form-group col-3">
+                    <label>Cardholder Name</label>
+                    <input name="name" class="form-control" type="text" placeholder="Full Name">
+                </div>
+                </div>
+                
+                <div class="row">
+                <div class="form-group col-3">
+                    <label>CVV</label>
+                    <input name="cvv" class="form-control" type="text" placeholder="XYZ">
+                </div>
+                </div>
+                
+                <div class="row">
+                    <div class="form-group col-3">
+                        <label>Billing Address</label>
+                        <input name="address" class="form-control" type="text" placeholder="Billing Address">
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col">
+                    <button type="submit" class="btn btn-success" onclick="this.blur(); createBilling()">Create Billing Information</button>
+                    </div>
+                </div>		
+            </form>
+        </div>
+    </div>
+</body>
+</html>

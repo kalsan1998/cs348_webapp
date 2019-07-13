@@ -7,16 +7,20 @@ function loadHeader(id) {
 }
 
 function displayError(text) {
+    $("#err").remove();
+    $("#succ").remove();
     $(`
-    <div class="alert alert-danger alert-dismissible">
+    <div id="err" class="alert alert-danger alert-dismissible">
         <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
         <strong>${text}</strong>
     </div>`).prependTo('#content');
 }
 
 function displaySuccess(text) {
+    $("#err").remove();
+    $("#succ").remove();
     $(`
-    <div class="alert alert-success alert-dismissible">
+    <div id="succ" class="alert alert-success alert-dismissible">
         <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
         <strong>${text}</strong>
     </div>`).prependTo('#content');

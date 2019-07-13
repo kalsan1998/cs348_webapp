@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Add New Client</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="common.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="common.js"></script>
+    <script>
+		function createClient() {
+            if ($('[name="phone"]')[0].value.length != 10 || 
+                ! $('[name="phone"]')[0].value.match(/^[0-9]*$/) ){
+                displayError("Phone number must be exactly 10 digits long.");
+                return;
+            }
+			$.post(
+				"/create_client",
+				{
+					first_name : $('[name="fname"]')[0].value,
+					last_name : $('[name="lname"]')[0].value,
+                    email : $('[name="email"]')[0].value,
+                    phone_number : $('[name="phone"]')[0].value,
+                    home_address : $('[name="address"]')[0].value,
+                },
+                // Success
+				(res) => {
+                    const url = "clients.html#addsuccess";
+                    window.location = url;
+				},
+			).fail((err) => {
+                console.log(err);
+                displayError("Failed to add a new client.");
+            });
+		}
+    </script>
+</head>
+<body>
+    <!-- Header dynamically loaded by common.js -->
+    <div id="header-load"></div>
+    <script>loadHeader("clients-nav")</script>
+
+	<div id="content">
+        <div class="container-fluid">
+            <form class="form ml-auto" onsubmit="return false">
+                
+                <div class="row">
+                <div class="form-group col-6">
+                    <label>First Name</label>
+                    <input name="fname" class="form-control" type="text" placeholder="First Name">
+                </div>
+                </div>
+
+                <div class="row">
+                <div class="form-group col-6">
+                    <label>Last Name</label>
+                    <input name="lname" class="form-control" type="text" placeholder="Last Name">
+                </div>
+                </div>
+                
+                <div class="row">
+                <div class="form-group col-6">
+                    <label>Email Address</label>
+                    <input name="email" class="form-control" type="text" placeholder="abc@example.com">
+                </div>
+                </div>
+                
+                <div class="row">
+                <div class="form-group col-6">
+                    <label>Phone Number</label>
+                    <input name="phone" class="form-control" type="text" placeholder="1112223333">
+                </div>
+                </div>
+                
+                <div class="row">
+                <div class="form-group col-6">
+                    <label>Home Address</label>
+                    <input name="address" class="form-control" type="text" placeholder="123 Example St, Waterloo, Ontario">
+                </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col">
+                    <button type="submit" class="btn btn-success" onclick="this.blur(); createClient()">Add Client</button>
+                    </div>
+                </div>		
+            </form>
+        </div>
+    </div>
+</body>
+</html>

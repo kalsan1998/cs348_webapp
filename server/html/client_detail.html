@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Client Information</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="common.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="common.js"></script>
+    <script>
+        var email = null;
+
+        $(document).ready(() => {
+            var url = new URL(window.location);
+            if (window.location.hash === '#billingsuccess') {
+                displaySuccess("Successfully created new billing information");
+                const tmp = window.location.href.split("#")[0];
+                url = new URL(tmp);
+                window.history.replaceState(null, "", tmp);
+            }
+            const e = url.searchParams.get("email");
+            if (!e) {
+                window.location = "clients.html";
+            }
+            email = e;
+            fillClientInfo();
+            fillEventTable();
+            fillBillingTable();
+        });
+
+        function createEventRowHtml(data) {
+            return `
+                <tr entry_id="${data['billed_to']}+'&'+${data['venue_id']}+'&'+${data['event_datetime']}">
+                    <td align="center">${data['venue_name']}</td>
+                    <td align="center">${data['venue_address']}</td>
+					<td align="center">${data['event_datetime']}</td>
+                    <td align="center">${data['event_duration']}</td>
+                    <td align="center">${data['attendees']}</td>
+                    <td align="center">${data['manager']}</td>
+                    <td align="center">${data['total_cost']}</td>
+                    <td align="center">${data['booking_date']}</td>
+                    <td align="center">
+                        <button class="btn edit-btn" onclick="deleteEvent('${data['billed_to']}+'&'+${data['venue_id']}+'&'+${data['event_datetime']}')"><span class="fa fa-trash"></span></button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function createBillingRowHtml(data) {
+            return `
+                <tr entry_id="${data['billing_id']}">
+                    <td align="center">${data['card_number']}</td>
+                    <td align="center">${data['cardholder_name']}</td>
+					<td align="center">${data['billing_address']}</td>
+                    <td align="center">${data['events_booked']}</td>
+                    <td align="center">${data['amount_paid']}</td>
+                    <td align="center">${data['date_added']}</td>
+                    <td align="center">
+                        <button class="btn delete-btn" onclick="deleteBilling('${data['billing_id']}')"><span class="fa fa-trash"></span></button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function insertEventRow(data) {
+            $(createEventRowHtml(data)).appendTo($('#event_data'));
+        }
+
+        function insertBillingRow(data) {
+            $(createBillingRowHtml(data)).appendTo($('#billing_data'));
+        }
+
+        function fillClientInfo() {
+            $.get(
+                "/clients",
+                {
+                    email: email
+                },
+                // data is an array of json objects
+                (data) => {
+                    const fullname = data[0]['first_name'] + ' ' + data[0]['last_name'];
+                    $('#fullname').html(fullname);
+                    $('#email').attr('value', data[0]['email']);
+                    $('#address').val(data[0]['home_address']);
+                    $('#phone').val(data[0]['phone_number']);
+                    $('#booked').attr('value', data[0]['number_booked_events']);
+                    $('#paid').attr('value', data[0]['total_paid']);
+                },
+                'json'
+            ).fail(() => {
+                displayError("Failed to retrieve data.");
+            });
+        }
+
+        function fillEventTable() {
+            $.get(
+                "/client_event",
+                {
+                    email: email
+                },
+                // data is an array of json objects
+                (data) => {
+                    $('#event_data > tr').remove();
+                    for (var i = 0; i < data.length; i++) {
+                        insertEventRow(data[i]);
+                    }
+                },
+                'json'
+            ).fail((err) => {
+                console.log(err);
+                displayError("Failed to retrieve event data.");
+            });
+        }
+
+        function fillBillingTable() {
+            $.get(
+                "/client_billing",
+                {
+                    email: email
+                },
+                // data is an array of json objects
+                (data) => {
+                    $('#billing_data > tr').remove();
+                    for (var i = 0; i < data.length; i++) {
+                        insertBillingRow(data[i]);
+                    }
+                },
+                'json'
+            ).fail((err) => {
+                console.log(err);
+                displayError("Failed to retrieve billing information.");
+            });
+        }
+
+        function updateClient() {
+            if ($('#phone')[0].value.length != 10 || 
+                ! $('#phone')[0].value.match(/^[0-9]*$/) ){
+                displayError("Phone number must be exactly 10 digits long.");
+                return;
+            }
+            $.post(
+				"/update_client",
+                {
+                    email: email,
+                    home_address: $("#address").val(),
+                    phone_number: $("#phone").val()
+                },
+                // Success
+				(res) => {
+                    displaySuccess("Successfully updated client information.");
+                    $('#address').val(res[0]['home_address']);
+                    $('#phone').val(res[0]['phone_number']);
+				},
+			).fail((err) => {
+                console.log(err);
+                displayError("Failed to update client information.");
+            });
+        }
+    
+        function deleteBilling(id) {
+            $.post(
+				"/delete_client_billing",
+				{
+					billing_id : id
+				},
+				() => {
+                    const row = $(`#billing_data > tr[entry_id="${id}"]`);
+					row.fadeOut('normal', () => {
+                        row.remove();
+                    });
+				},
+			).fail(() => {
+                displayError("Failed to delete billing information.");
+            });
+        }
+
+        function deleteEvent(id) {
+            const billed_to = id.split("&")[0];
+            const venue_id = id.split("&")[1];
+            const event_datetime = id.split("&")[2];
+            $.post(
+				"/delete_event",
+				{
+                    billed_to : billed_to,
+                    venue_id : venue_id,
+                    event_datetime : event_datetime
+				},
+				() => {
+                    const row = $(`#event_data > tr[entry_id="${id}"]`);
+					row.fadeOut('normal', () => {
+                        row.remove();
+                    });
+				},
+			).fail(() => {
+                displayError("Failed to delete event.");
+            });
+        }
+
+        function addBillingInfo() {
+            const url = "new_billing.html?email=" + encodeURIComponent(email);
+            window.location = url;
+        }
+
+        function deleteClient() {
+            $.post(
+				"/delete_client",
+				{
+					email : email
+				},
+				() => {
+                    window.location = "clients.html#delete";
+				},
+			).fail(() => {
+                displayError("Failed to delete this client.");
+            });
+        }
+
+        function confirmDelete() {
+            var r = confirm("Are you sure you want to delete this client? (WARNING: Can not be restored after deletion");
+            if (r == true) {
+                deleteClient();
+            } else {
+                return;
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <!-- Header dynamically loaded by common.js -->
+    <div id="header-load"></div>
+    <script>loadHeader("clients-nav")</script>
+
+    <div id="content">
+        <div class="container-fluid">
+            <h4 id="fullname" class='display-4'>
+                Client Full Name
+            </h4>
+
+            <div class="form-group row">
+                <div class="col-sm-4">
+                        <button type="button" class="btn btn-danger" onclick="this.blur(); confirmDelete();">Delete Client</button>
+                </div>
+            </div>
+            <form class="form ml-auto" onsubmit="return false">
+                <div class="form-group row">
+                    <label for="email" class="col-sm-2 col-form-label">Email</label>
+                    <div class="col-sm-10">
+                        <input id="email" name="email" class="form-control-plaintext" type="text" value="Email Address" readonly>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="address" class="col-sm-2 col-form-label">Home Address</label>
+                    <div class="col-sm-7">
+                        <input id="address" name="address" class="form-control" type="text" value="Home Address">
+                    </div>
+                    <button type="button" class="btn btn-success" onclick="this.blur(); updateClient()">Update</button>
+                </div>
+
+                <div class="form-group row">
+                    <label for="phone" class="col-sm-2 col-form-label">Phone Number</label>
+                    <div class="col-sm-7">
+                        <input id="phone" name="phone" class="form-control" type="text" value="Phone Number">
+                    </div>
+                    <button type="button" class="btn btn-success" onclick="this.blur(); updateClient()">Update</button>
+                </div>
+
+                <div class="form-group row">
+                    <label for="booked" class="col-sm-2 col-form-label"># of Events Booked</label>
+                    <div class="col-sm-4">
+                        <input id="booked" name="booked" class="form-control" type="text" value="# Events Booked" readonly>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="price" class="col-sm-2 col-form-label">Total Money Paid</label>
+                    <div class="col-sm-4">
+                        <input id="paid" name="price" class="form-control" type="text" value="Amount Paid" readonly>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="billing" class="col-sm-2 col-form-label">Billing Information</label>
+                    <div class="col-sm-4">
+                        <button type="button" class="btn btn-primary" onclick="this.blur(); addBillingInfo()">Add New
+                            Billing Information</button>
+                    </div>
+                    <table class="table table-hover mt-3" name="billing">
+                        <thead>
+                            <tr>
+                                <th class="text-center">Credit Card Number</th>
+                                <th class="text-center">Cardholder name</th>
+                                <th class="text-center">Billing Address</th>
+                                <th class="text-center"># Events Booked</th>
+                                <th class="text-center">Amount Paid</th>
+                                <th class="text-center">Date Added</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="billing_data">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="form-group row">
+                    <label for="events" class="col-sm-2 col-form-label">Booked Events</label>
+                    <div class="col-sm-4">
+                        <button type="button" class="btn btn-primary" onclick="this.blur(); addEvent()">Book New
+                            Event</button>
+                    </div>
+                    <table class="table table-hover mt-3" name="events">
+                        <thead>
+                            <tr>
+                                <th class="text-center">Venue Name</th>
+                                <th class="text-center">Location</th>
+                                <th class="text-center">Event Time</th>
+                                <th class="text-center">Event Duration</th>
+                                <th class="text-center"># of Attendees</th>
+                                <th class="text-center">Manager</th>
+                                <th class="text-center">Total Cost</th>
+                                <th class="text-center">Booked On</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="event_data">
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+
+</html>
