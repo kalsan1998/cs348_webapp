@@ -49,7 +49,8 @@
 				{
 					name : $('[name="name"]')[0].value,
                     min_duration : $('[name="min_duration"]')[0].value,
-                    max_duration : $('[name="max_duration"]')[0].value
+                    max_duration : $('[name="max_duration"]')[0].value,
+                    price : $('[name="price"]')[0].value
 				},
 				// data is an array of json objects
 				(data) => {
@@ -74,11 +75,13 @@
             const supplier_id = edit_id.split("&")[0];
             const supply_name = edit_id.split("&")[1];
             $.post(
-				"/update_menu",
+				"/update_entertainment",
                 {
                     supplier_id : supplier_id,
                     supply_name : supply_name,
-                    duration : data[0].value
+                    duration : data[0].value,
+                    price_per_quantity : data[1].value,
+                    description : data[2].value
                 },
                 // Success
 				(res) => {
@@ -132,6 +135,11 @@
                     <div class="col">
                         <label>Maximum Duration</label>
                         <input name="max_duration" class="form-control" type="text" placeholder="hh:mm">
+                    </div>
+
+                    <div class="col">
+                        <label>Maximum Price</label>
+                        <input name="price" class="form-control" type="text" placeholder="Price">
                     </div>
                 </div>
                 <div class="row">

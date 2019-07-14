@@ -127,13 +127,11 @@ async function updateSupply(params) {
 	var query = `
 		UPDATE supply SET
 			description=$3,
-			price_per_quantity=$4,
-			min_quantity=$5,
-			max_quantity=$6
+			price_per_quantity=$4
 		WHERE supplier_id=$1 AND supply_name=$2;
 	`;
 	const vals = [params.supplier_id, params.supply_name, params.description, 
-		params.price_per_quantity, params.min_quantity, params.max_quantity];
+		params.price_per_quantity];
 	const client = await pool.connect();
 	await client.query(query, vals);
 	await client.release();
@@ -406,6 +404,10 @@ async function getEntertainment(params) {
 	if(params.max_duration) {
 		clauses.push("duration <= $" + (vals.length + 1));
 		vals.push(params.max_duration);
+	}
+	if(params.price) {
+		clauses.push("price_per_quantity <= $" + (vals.length + 1));
+		vals.push(params.price);
 	}
 	var query = "SELECT * FROM (entertainment INNER JOIN supply ON entertainment.supplier_id \
 		= supply.supplier_id) INNER JOIN supplier ON entertainment.supplier_id = supplier.supplier_id \
