@@ -35,7 +35,7 @@
 
         function createEventRowHtml(data) {
             return `
-                <tr entry_id="${data['billed_to']}+'&'+${data['venue_id']}+'&'+${data['event_datetime']}">
+                <tr entry_id="'${data['billed_to']}'+'&'+'${data['venue_id']}'+'&'+'${data['event_datetime']}'">
                     <td align="center">${data['venue_name']}</td>
                     <td align="center">${data['venue_address']}</td>
 					<td align="center">${data['event_datetime']}</td>
@@ -45,7 +45,7 @@
                     <td align="center">${data['total_cost']}</td>
                     <td align="center">${data['booking_date']}</td>
                     <td align="center">
-                        <button class="btn edit-btn" onclick="deleteEvent('${data['billed_to']}+'&'+${data['venue_id']}+'&'+${data['event_datetime']}')"><span class="fa fa-trash"></span></button>
+                        <button class="btn edit-btn" onclick="viewEvent('${data['billed_to']}'+'&'+'${data['venue_id']}'+'&'+'${data['event_datetime']}')"><span class="fa fa-info"></span></button>
                     </td>
                 </tr>
             `;
@@ -99,9 +99,9 @@
 
         function fillEventTable() {
             $.get(
-                "/client_event",
+                "/event",
                 {
-                    email: email
+                    client_email: email
                 },
                 // data is an array of json objects
                 (data) => {
@@ -181,26 +181,14 @@
             });
         }
 
-        function deleteEvent(id) {
+        function viewEvent(id) {
             const billed_to = id.split("&")[0];
             const venue_id = id.split("&")[1];
             const event_datetime = id.split("&")[2];
-            $.post(
-				"/delete_event",
-				{
-                    billed_to : billed_to,
-                    venue_id : venue_id,
-                    event_datetime : event_datetime
-				},
-				() => {
-                    const row = $(`#event_data > tr[entry_id="${id}"]`);
-					row.fadeOut('normal', () => {
-                        row.remove();
-                    });
-				},
-			).fail(() => {
-                displayError("Failed to delete event.");
-            });
+            const url = "event_detail.html?billed=" + encodeURIComponent(billed_to) + 
+                "&venue=" + encodeURIComponent(venue_id) +
+                "&datetime=" + encodeURIComponent(event_datetime);
+            window.location = url;
         }
 
         function addBillingInfo() {
@@ -313,7 +301,7 @@
                 <div class="form-group row">
                     <label for="events" class="col-sm-2 col-form-label">Booked Events</label>
                     <div class="col-sm-4">
-                        <button type="button" class="btn btn-primary" onclick="this.blur(); addEvent()">Book New
+                        <button type="button" class="btn btn-primary" onclick="return false;">Book New
                             Event</button>
                     </div>
                     <table class="table table-hover mt-3" name="events">

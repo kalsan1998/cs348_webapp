@@ -37,12 +37,13 @@ exports.getClients = getClients;
 exports.updateClient = updateClient;
 exports.addClient = addClient;
 exports.deleteClient = deleteClient;
-exports.getClientEvent = getClientEvent;
 
 exports.getClientBilling = getClientBilling;
 exports.deleteBillingInfo = deleteBillingInfo;
 exports.addBillingInfo = addBillingInfo;
 
+exports.getEvent = getEvent;
+exports.getEventSupplyOrder = getEventSupplyOrder;
 exports.deleteEvent = deleteEvent;
 
 
@@ -339,7 +340,7 @@ async function deleteClient(params) {
 
 async function getClientBilling(params) {
 	var query = "SELECT billing_id, card_number, cardholder_name, billing_address, \
-		to_char(date_added, 'dd-mm-yyyy') as date_added, COUNT(billed_to) as events_booked, \
+		to_char(date_added, 'dd MONTH yyyy') as date_added, COUNT(billed_to) as events_booked, \
 		COALESCE(SUM(total_cost), 0) as amount_paid \
 		FROM billing_information LEFT OUTER JOIN event ON \
 		billing_information.billing_id = event.billed_to \
@@ -371,18 +372,6 @@ async function addBillingInfo(params) {
 	const client = await pool.connect();
 	await client.query(query, vals);
 	await client.release();
-}
-
-async function getClientEvent(params) {
-	var query = "SELECT * FROM (event INNER JOIN venue ON event.venue_id = \
-		venue.venue_id) INNER JOIN billing_information ON \
-		event.billed_to = billing_information.billing_id WHERE \
-		billing_information.client_email = $1;";
-	var vals = [params.email];
-	const client = await pool.connect();
-	const res = await client.query(query, vals);
-	await client.release();
-	return res.rows;
 }
 
 // id[0] = billed_to, id[1] = venue_id, id[2] = event_datetime
@@ -543,4 +532,103 @@ async function deleteDecorations(id) {
 	await client.query(query1, id);
 	await client.query(query2, id);
     await client.release();
+}
+					
+async function getEvent(params) {
+	var clauses = [];
+	var vals = [];
+	if (params.venue_name) {
+		clauses.push("venue.venue_name ILIKE $" + (vals.length  + 1 ));
+		vals.push('%' + params.venue_name + '%');
+	}
+	if (params.min_attendees) {
+		clauses.push("event.attendees  >= $" + (vals.length  + 1 ));
+		vals.push(params.min_attendees);
+	}
+	if(params.min_cost) {
+		clauses.push("event.total_cost >= $" + (vals.length + 1));
+		vals.push(params.min_cost);
+	}
+	if(params.min_duration) {
+		clauses.push("event.event_duration >= $" + (vals.length + 1));
+		vals.push(params.min_duration);
+	}
+	if (params.manager_name) {
+		clauses.push("CONCAT(em.first_name, ' ', em.last_name) ILIKE $" + (vals.length  + 1 ));
+		vals.push('%' + params.manager_name + '%');
+	}
+	if (params.client_name) {
+		clauses.push("CONCAT(cli.first_name, ' ', cli.last_name) ILIKE $" + (vals.length  + 1 ));
+		vals.push('%' + params.client_name + '%');
+	}
+	if(params.date_after) {
+		clauses.push("event.event_datetime >= $" + (vals.length + 1));
+		vals.push(params.date_after);
+	}
+	if(params.date_before) {
+		clauses.push("event.event_datetime <= $" + (vals.length + 1));
+		vals.push(params.date_before);
+	}
+	if (params.client_email) {
+		clauses.push("cli.email ILIKE $" + (vals.length  + 1));
+		vals.push('%' + params.client_email + '%');
+	}
+	if(params.billed_to) {
+		clauses.push("event.billed_to = $" + (vals.length + 1));
+		vals.push(params.billed_to);
+	}
+	if(params.venue_id) {
+		clauses.push("event.venue_id = $" + (vals.length + 1));
+		vals.push(params.venue_id);
+	}
+	// if(params.event_datetime) {
+	// 	clauses.push("event.event_datetime = $" + (vals.length + 1));
+	// 	vals.push(params.event_datetime);
+	// }
+	var query = "WITH em AS ( \
+					SELECT app_user.email, app_user.first_name, app_user.last_name \
+					FROM app_user INNER JOIN employee ON app_user.email = employee.email), \
+					  cli AS ( \
+					SELECT app_user.email, app_user.first_name, app_user.last_name \
+					FROM app_user INNER JOIN client ON app_user.email = client.email) \
+		SELECT venue.venue_name, venue.venue_address, event.billed_to, event.venue_id, \
+			to_char(event.event_datetime, 'YYYY-MM-DD HH:MI:SS') AS event_datetime_id, \
+			to_char(event.event_datetime, 'dd MONTH yyyy HH24:MI:SS') AS event_datetime, \
+			event.event_duration, event.attendees, CONCAT(em.first_name, ' ', em.last_name) AS manager, \
+			event.total_cost, to_char(event.booking_date, 'dd MONTH yyyy') AS booking_date, \
+			CONCAT(cli.first_name, ' ', cli.last_name) AS client_name, \
+			cli.email AS client_email \
+		FROM (((event INNER JOIN venue ON venue.venue_id = event.venue_id) \
+		INNER JOIN billing_information \
+			ON event.billed_to = billing_information.billing_id) \
+		INNER JOIN cli \
+			ON billing_information.client_email = cli.email) \
+		INNER JOIN em \
+			ON event.manager = em.email";
+	if (clauses.length > 0) {
+		query += " WHERE " + clauses.join(" AND ");
+	}
+	query += " ORDER BY event.booking_date;";
+	const client = await pool.connect();
+    const res = await client.query(query, vals);
+    await client.release();
+    return res.rows;
+}
+
+async function getEventSupplyOrder(params) {
+	var query = "SELECT supply.supply_name, supply_order.supply_quantity, supply_order.supply_cost, \
+	supply.description, supplier.company_name \
+	FROM ((supply_order INNER JOIN event ON \
+	supply_order.billed_to = event.billed_to \
+	AND supply_order.venue_id = event.venue_id \
+	AND supply_order.event_datetime = event.event_datetime) INNER JOIN supply ON \
+	supply.supplier_id = supply_order.supplier_id \
+	AND supply.supply_name = supply_order.supply_name) INNER JOIN supplier ON \
+	supplier.supplier_id = supply.supplier_id \
+	WHERE supply_order.billed_to = $1 AND supply_order.venue_id = $2 AND supply_order.event_datetime = $3;";
+	var vals = [params.billed_to, params.venue_id, params.event_datetime];
+	const client = await pool.connect();
+	const res = await client.query(query, vals);
+	await client.release();
+	return res.rows;
 }
