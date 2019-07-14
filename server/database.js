@@ -28,6 +28,11 @@ exports.insertEntertainment = insertEntertainment;
 exports.updateEntertainment = updateEntertainment;
 exports.deleteEntertainment = deleteEntertainment;
 
+exports.getDecorations = getDecorations;
+exports.insertDecorations = insertDecorations;
+exports.updateDecorations = updateDecorations;
+exports.deleteDecorations = deleteDecorations;
+
 exports.getClients = getClients;
 exports.updateClient = updateClient;
 exports.addClient = addClient;
@@ -459,6 +464,79 @@ async function updateEntertainment(params) {
 async function deleteEntertainment(id) {
 	var query1 = 
 		`DELETE FROM entertainment WHERE supplier_id=$1 AND supply_name=$2;`;
+	var query2 = 
+		`DELETE FROM supply WHERE supplier_id=$1 AND supply_name=$2;`;
+	const client = await pool.connect();
+	await client.query(query1, id);
+	await client.query(query2, id);
+    await client.release();
+}
+
+async function getDecorations(params) {
+	var clauses = [];
+	var vals = [];
+	if (params.name) {
+		clauses.push("decoration.supply_name ILIKE $" + (vals.length  + 1 ));
+		vals.push('%' + params.name + '%');
+	}
+	if (params.type) {
+		clauses.push("type  ILIKE $" + (vals.length  + 1 ));
+		vals.push('%' + params.type + '%');
+	}
+	if(params.price) {
+		clauses.push("price_per_quantity <= $" + (vals.length + 1));
+		vals.push(params.price);
+	}
+	var query = "SELECT * FROM (decoration INNER JOIN supply ON decoration.supplier_id \
+		= supply.supplier_id) INNER JOIN supplier ON decoration.supplier_id = supplier.supplier_id \
+		AND decoration.supply_name = supply.supply_name";
+	if (clauses.length > 0) {
+		query += " WHERE " + clauses.join(" AND ");
+	}
+	query += " ORDER BY supply.supply_name;";
+	const client = await pool.connect();
+    const res = await client.query(query, vals);
+    await client.release();
+    return res.rows;
+}
+
+async function insertDecorations(params) {
+	await insertSupply(params);
+	var query = `INSERT INTO decoration(supplier_id, supply_name, type)
+		VALUES($1,$2,$3);`;
+	const vals = [params.supplier_id, params.supply_name, params.type];
+	const client = await pool.connect();
+	await client.query(query, vals);
+    await client.release();
+}
+
+async function updateDecorations(params) {
+	await updateSupply(params);
+	var query = `
+		UPDATE decoration SET
+			type=$3
+		WHERE supplier_id=$1 AND supply_name=$2;
+	`;
+	const vals = [params.supplier_id, params.supply_name, params.type];
+
+	const client = await pool.connect();
+	await client.query(query, vals);
+	
+	// Return query.
+	var res_query = "SELECT * FROM (decoration INNER JOIN supply ON decoration.supplier_id \
+		= supply.supplier_id AND decoration.supply_name = supply.supply_name) INNER JOIN \
+		supplier ON decoration.supplier_id = supplier.supplier_id WHERE \
+		supply.supplier_id=$1 AND supply.supply_name=$2";
+	const res_vals = [params.supplier_id, params.supply_name];
+
+	const row = await client.query(res_query, res_vals);
+	await client.release();
+	return row;
+}
+
+async function deleteDecorations(id) {
+	var query1 = 
+		`DELETE FROM decoration WHERE supplier_id=$1 AND supply_name=$2;`;
 	var query2 = 
 		`DELETE FROM supply WHERE supplier_id=$1 AND supply_name=$2;`;
 	const client = await pool.connect();

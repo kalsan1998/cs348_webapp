@@ -160,6 +160,51 @@ app.post('/delete_entertainment', async (req, res) => {
     }
 });
 
+// Decorations related functions.
+app.get('/decorations', async (req, res) => {
+    try {
+        const data = await db.getDecorations(req.query);
+        res.send(data);
+    } catch (e) {
+        // Probably should do better error handling.
+        console.log(e);
+        res.send(500);
+    }
+});
+
+app.post('/create_decorations', async (req, res) => {
+    try {
+        await db.insertDecorations(req.body);
+        res.send(200);
+    } catch (e) {
+        // Probably should do better error handling.
+        console.log(e);
+        res.send(500);
+    }
+});
+
+app.post('/update_decorations', async (req, res) => {
+    try {
+        const data = await db.updateDecorations(req.body);
+        res.send(data);
+    } catch (e) {
+        // Probably should do better error handling.
+        console.log(e);
+        res.send(500);
+    }
+});
+
+app.post('/delete_decorations', async (req, res) => {
+    try {
+        await db.deleteDecorations([req.body.supplier_id, req.body.supply_name]);
+        res.send(200);
+    } catch (e) {
+        // Probably should do better error handling.
+        console.log(e);
+        res.send(500);
+    }
+});
+
 // Client related functions.
 app.get('/clients', async (req, res) => {
     try {

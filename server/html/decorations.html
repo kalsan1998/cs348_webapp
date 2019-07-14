@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Decorations</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="common.css">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="common.js"></script>
+    <script>
+        $(document).ready(() => {
+            getDecorations();
+
+            if (window.location.hash === '#success') {
+                displaySuccess("Successfully created a new decoration option");
+                window.history.replaceState(null, "", "decorations.html");
+            }
+        });
+
+        function createDecorationsRowHtml(data) {
+            return `
+                <tr entry_id="${data['supplier_id']+'&'+data['supply_name']}">
+                    <td align="center">${data['company_name']}</td>
+                    <td align="center">${data['supply_name']}</td>
+                    <td align="center">${data['type']}</td>
+                    <td align="center">${data['price_per_quantity']}</td>
+                    <td align="center">${data['description']}</td>
+                    <td align="center">
+                        <button class="btn edit-btn" onclick="editDecorations('${data['supplier_id']+'&'+data['supply_name']}')"><span class="fa fa-pencil"></span></button>
+                        <button class="btn delete-btn" onclick="deleteDecorations('${data['supplier_id']+'&'+data['supply_name']}')"><span class="fa fa-trash"></span></button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function insertDecorationsRow(data) {
+            $(createDecorationsRowHtml(data)).appendTo($('#decorations_data'));
+        }
+
+        function getDecorations() {
+            $("#err").remove();
+            $("#succ").remove();
+			$.get(
+				"/decorations",
+				{
+					name : $('[name="name"]')[0].value,
+                    type : $('[name="type"]')[0].value,
+                    price : $('[name="price"]')[0].value
+				},
+				// data is an array of json objects
+				(data) => {
+					$('#decorations_data > tr').remove();
+					for (var i = 0; i < data.length; i++) {
+						insertDecorationsRow(data[i]);
+					}
+				},
+				'json'
+			).fail(() => {
+                displayError("Failed to retrieve data.");
+            });
+        }
+
+        function editDecorations(edit_id) {
+            const row = $(`#decorations_data > tr[entry_id="${edit_id}"]`).eq(0);
+            makeRowEditable(row, 'submitDecorationsEdits', [0,1]);
+        }
+        
+        function submitDecorationsEdits(edit_id) {
+            const data = $(`#decorations_data > tr[entry_id="${edit_id}"] > td > input`);
+            const supplier_id = edit_id.split("&")[0];
+            const supply_name = edit_id.split("&")[1];
+            $.post(
+				"/update_decorations",
+                {
+                    supplier_id : supplier_id,
+                    supply_name : supply_name,
+                    type : data[0].value,
+                    price_per_quantity : data[1].value,
+                    description : data[2].value
+                },
+                // Success
+				(res) => {
+                    $(`#decorations_data > tr[entry_id="${edit_id}"]`)
+                        .replaceWith(createDecorationsRowHtml(res.rows[0]));
+				},
+			).fail((err) => {
+                displayError("Failed to update decoration option.");
+            });
+        }
+        
+        function deleteDecorations(del_id) {
+            const supplier_id = del_id.split("&")[0];
+            const supply_name = del_id.split("&")[1];
+			$.post(
+				"/delete_decorations",
+				{
+                    supplier_id : supplier_id,
+                    supply_name : supply_name
+				},
+				() => {
+                    const row = $(`#decorations_data > tr[entry_id="${del_id}"]`);
+					row.fadeOut('normal', () => {
+                        row.remove();
+                    });
+				},
+			).fail(() => {
+                displayError("Failed to delete decoration option.");
+            });
+        }
+    </script>
+</head>
+<body>
+    <!-- Header dynamically loaded by common.js -->
+    <div id="header-load"></div>
+    <script>loadHeader("decorations-nav")</script>
+	<div id="content">
+        <div id="filters" class="container-fluid">
+            <h3>Filters</h3>			
+                <div class="row filter-row">
+                    <div class="col">
+                        <label>Name</label>
+                        <input name="name" class="form-control" type="text" placeholder="Name">
+                    </div>
+                    
+                    <div class="col">
+                        <label>Type</label>
+                        <input name="type" class="form-control" type="text" placeholder="flower, balloon, etc">
+                    </div>
+
+                    <div class="col">
+                        <label>Maximum Price</label>
+                        <input name="price" class="form-control" type="text" placeholder="Price">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <button type="submit" class="btn btn-success" onclick="this.blur(); getDecorations()">Apply Filters</button>
+                    </div>
+                </div>
+        </div>
+        <div id="table-display">
+            <table class="table table-hover bm-4">
+                <thead>
+                    <tr>
+                        <th class="text-center">Supplier</th>
+                        <th class="text-center">Name</th>
+                        <th class="text-center">Type</th>
+                        <th class="text-center">Price</th>
+                        <th class="text-center">Description</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="decorations_data">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>

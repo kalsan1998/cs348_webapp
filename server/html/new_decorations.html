@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Decorations</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="common.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="common.js"></script>
+    <script>
+        $(document).ready(() => {
+            fillSupplier();
+        });
+
+        function createSupplierNameHtmlEntry(data) {
+            return `<option value="${data['supplier_id']}">${data['company_name']}</option>`;
+        }
+
+        function insertSupplierNameEntry(data) {
+            $(createSupplierNameHtmlEntry(data)).appendTo($("#select-supplier"));
+        }
+
+		function createDecorations() {
+            var params = {
+					supplier_id : $('#select-supplier').val(),
+					supply_name : $('[name="name"]')[0].value,
+                    description : $('[name="description"]')[0].value,
+                    price_per_quantity : $('[name="price"]')[0].value,
+                    min_quantity : $('[name="min_quantity"]')[0].value,
+                    max_quantity : $('[name="max_quantity"]')[0].value,
+                    type : $('[name="type"]')[0].value
+                };
+			$.post(
+				"/create_decorations",
+				params,
+                // Success
+				(res) => {
+                    window.location.href = "decorations.html#success";
+				},
+			).fail((err) => {
+                console.log(err);
+                displayError("Failed to create new decoration option.");
+            });
+        }
+
+        function fillSupplier() {
+            $.get(
+                "/supplier_name",
+                {},
+                (data) => {
+                    for (var i = 0; i < data.length; i++) {
+						insertSupplierNameEntry(data[i]);
+					}
+                }
+            ).fail((err) => {
+                console.log(err);
+            });
+        }
+    </script>
+</head>
+<body>
+    <!-- Header dynamically loaded by common.js -->
+    <div id="header-load"></div>
+    <script>loadHeader("decorations-nav")</script>
+
+	<div id="content">
+        <div class="container-fluid">
+            <form class="form ml-auto" onsubmit="return false">
+                <div class="row">
+                <div class="form-group col-3">
+                    <label>Supplier</label>
+                    <select class="form-control" id="select-supplier">
+                    </select>
+                </div>
+                </div>
+                
+                <div class="row">
+                <div class="form-group col-3">
+                    <label>Name</label>
+                    <input name="name" class="form-control" type="text" placeholder="Name" id="name">
+                </div>
+                </div>
+                
+                <div class="row">
+                <div class="form-group col-3">
+                    <label>Price</label>
+                    <input name="price" class="form-control" type="text" placeholder="Price">
+                </div>
+                </div>
+                
+                <div class="row">
+                <div class="form-group col-3">
+                    <label>Type</label>
+                    <input name="type" class="form-control" type="text" placeholder="flower, balloon, etc">
+                </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group col-3">
+                        <label>Minimum Order</label>
+                        <input name="min_quantity" class="form-control" type="text" placeholder="Min Number">
+                    </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group col-3">
+                            <label>Maximum Order</label>
+                            <input name="max_quantity" class="form-control" type="text" placeholder="Max Number">
+                        </div>
+                        </div>
+                
+                <div class="row">
+                    <div class="form-group col-4">
+                        <label>Description (Optional)</label>
+                        <textarea name="description" class="form-control" type="text" placeholder="Description"></textarea>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col">
+                    <button type="submit" class="btn btn-success" onclick="this.blur(); createDecorations()">Create New Decoration Option</button>
+                    </div>
+                </div>		
+            </form>
+        </div>
+    </div>
+</body>
+</html>
