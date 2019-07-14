@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Booked Events</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="common.css">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="common.js"></script>
+    <script>    
+        $(document).ready(() => {
+            getEvents();
+            if (window.location.hash === '#delete') {
+                displaySuccess("Successfully deleted an event booking");
+                window.history.replaceState(null, "", "events.html");
+            }
+        });
+
+        function createEventRowHtml(data) {
+            return `
+                <tr entry_id="'${data['billed_to']}'+'&'+'${data['venue_id']}'+'&'+'${data['event_datetime']}'">
+                    <td align="center">${data['venue_name']}</td>
+                    <td align="center">${data['venue_address']}</td>
+					<td align="center">${data['event_datetime']}</td>
+                    <td align="center">${data['event_duration']}</td>
+                    <td align="center">${data['attendees']}</td>
+                    <td align="center">${data['manager']}</td>
+                    <td align="center">${data['total_cost']}</td>
+                    <td align="center">${data['booking_date']}</td>
+                    <td align="center">${data['client_name']}</td>
+                    <td align="center">
+                        <button class="btn edit-btn" onclick="eventDetail('${data['billed_to']}'+'&'+'${data['venue_id']}'+'&'+'${data['event_datetime']}')"><span class="fa fa-info"></span></button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function insertEventRow(data) {
+            $(createEventRowHtml(data)).appendTo($('#event_data'));
+        }
+
+		function getEvents() {
+            $("#err").remove();
+            $("#succ").remove();
+			$.get(
+                "/event",
+                {
+                    venue_name : $('[name="venue_name"]')[0].value,
+					min_attendees : $('[name="attendees"]')[0].value,
+                    min_cost : $('[name="cost"]')[0].value,
+                    min_duration : $('[name="duration"]')[0].value,
+                    manager_name : $('[name="manager"]')[0].value,
+                    client_name : $('[name="booker"]')[0].value,
+                    date_after : ($('[name="after"]')[0].value).replace("/-/g", ""),
+                    date_before : ($('[name="before"]')[0].value).replace("/-/g", "")
+                },
+                // data is an array of json objects
+                (data) => {
+                    $('#event_data > tr').remove();
+                    for (var i = 0; i < data.length; i++) {
+                        insertEventRow(data[i]);
+                    }
+                },
+                'json'
+            ).fail((err) => {
+                console.log(err);
+                displayError("Failed to retrieve event data.");
+            });
+        }
+
+        function eventDetail(id) {
+            const billed_to = id.split("&")[0];
+            const venue_id = id.split("&")[1];
+            const event_datetime = id.split("&")[2];
+            const url = "event_detail.html?billed=" + encodeURIComponent(billed_to) + 
+                "&venue=" + encodeURIComponent(venue_id) +
+                "&datetime=" + encodeURIComponent(event_datetime);
+            window.location = url;
+        }
+    </script>
+</head>
+<body>
+    <!-- Header dynamically loaded by common.js -->
+    <div id="header-load"></div>
+    <script>loadHeader("events-nav")</script>
+	<div id="content">
+        <div id="filters" class="container-fluid">
+            <h3>Filters</h3>			
+                <div class="row filter-row">
+                    <div class="col">
+                        <label>Venue Name</label>
+                        <input name="venue_name" class="form-control" type="text" placeholder="Venue Name">
+                    </div>
+                    
+                    <div class="col">
+                        <label>Minimum # of Attendees</label>
+                        <input name="attendees" class="form-control" type="text" placeholder="# of Attendees">
+                    </div>
+                    
+                    <div class="col">
+                        <label>Minimum Cost</label>
+                        <input name="cost" class="form-control" type="text" placeholder="Price">
+                    </div>	
+
+                    <div class="col">
+                        <label>Minimum Duration</label>
+                        <input name="duration" class="form-control" type="text" placeholder="hh:mm">
+                    </div>	
+                </div>
+                <div class="row filter-row">
+                    <div class="col">
+                        <label>Managed By</label>
+                        <input name="manager" class="form-control" type="text" placeholder="Manager Name">
+                    </div>
+                    
+                    <div class="col">
+                        <label>Booked By</label>
+                        <input name="booker" class="form-control" type="text" placeholder="Client Name">
+                    </div>
+
+                    <div class="col">
+                        <label>Event Date After</label>
+                        <input name="after" class="form-control" type="text" placeholder="yyyy-mm-dd">
+                    </div>
+
+                    <div class="col">
+                        <label>Event Date Before</label>
+                        <input name="before" class="form-control" type="text" placeholder="yyyy-mm-dd">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <button type="submit" class="btn btn-success" onclick="this.blur(); getEvents()">Apply Filters</button>
+                    </div>
+                </div>
+        </div>
+        <div id="table-display">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th class="text-center">Venue Name</th>
+                        <th class="text-center">Location</th>
+                        <th class="text-center">Event Time</th>
+                        <th class="text-center">Event Duration</th>
+                        <th class="text-center"># of Attendees</th>
+                        <th class="text-center">Manager</th>
+                        <th class="text-center">Total Cost</th>
+                        <th class="text-center">Booked On</th>
+                        <th class="text-center">Booked By</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="event_data">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Event Detail</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="common.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="common.js"></script>
+    <script>
+        var billed_to = null;
+        var venue_id = null;
+        var event_datetime = null;
+
+        $(document).ready(() => {
+            var url = new URL(window.location);
+            const b = url.searchParams.get("billed");
+            const v = url.searchParams.get("venue");
+            const d = url.searchParams.get("datetime");
+            if (!b || !v || !d) {
+                window.location = "events.html";
+            }
+            billed_to = b;
+            venue_id = v;
+            event_datetime = d;
+            fillEventInfo();
+            fillSupplies();
+        });
+
+        function createSupplyRowHtml(data) {
+            return `
+                <tr>
+                    <td align="center">${data['company_name']}</td>
+                    <td align="center">${data['supply_name']}</td>
+					<td align="center">${data['supply_quantity']}</td>
+                    <td align="center">${data['supply_cost']}</td>
+                    <td align="center">${data['description']}</td>
+                </tr>
+            `;
+        }
+
+        function insertSupplyRow(data) {
+            $(createSupplyRowHtml(data)).appendTo($('#supply_data'));
+        }
+
+        function fillSupplies() {
+            $.get(
+                "/event_supply_order",
+                {
+                    billed_to: billed_to,
+                    venue_id: venue_id,
+                    event_datetime: event_datetime
+                },
+                // data is an array of json objects
+                (data) => {
+                    $('#supply_data > tr').remove();
+                    for (var i = 0; i < data.length; i++) {
+                        insertSupplyRow(data[i]);
+                    }
+
+                    $('#supply_count').attr('value', data.length);
+                },
+                'json'
+            ).fail((err) => {
+                console.log(err);
+                displayError("Failed to retrieve supply information.");
+            });
+        }
+
+        function fillEventInfo() {
+            $.get(
+                "/event",
+                {
+                    billed_to: billed_to,
+                    venue_id: venue_id,
+                    event_datetime: event_datetime
+                },
+                // data is an array of json objects
+                (data) => {
+                    const book_no = (data[0]['billed_to'].toString() + data[0]['venue_id'].toString() + data[0]['event_datetime_id']).replace(/\s/g, "").replace(/:/g, "").replace(/-/g, ""); 
+                    $('#bookingno').html(book_no);
+                    $('#client').html(data[0]['client_name']);
+                    $('#venue').attr('value', data[0]['venue_name']);
+                    $('#address').attr('value', data[0]['venue_address']);
+                    $('#time').attr('value', data[0]['event_datetime']);
+                    $('#duration').attr('value', data[0]['event_duration']);
+                    $('#attendees').attr('value', data[0]['attendees']);
+                    $('#cost').attr('value', data[0]['total_cost']);
+                    $('#booking_date').attr('value', data[0]['booking_date']);
+
+                    var client_email = data[0]['client_email'];
+                    $('#client').attr('href', "client_detail.html?email=" + client_email);
+                },
+                'json'
+            ).fail(() => {
+                displayError("Failed to retrieve data.");
+            });
+        }
+
+        function deleteEvent() {
+            $.post(
+				"/delete_event",
+				{
+                    billed_to : billed_to,
+                    venue_id : venue_id,
+                    event_datetime : event_datetime
+				},
+				() => {
+                    window.location = "events.html#delete";
+				},
+			).fail(() => {
+                displayError("Failed to delete event booking.");
+            });
+        }
+
+        function confirmDelete() {
+            var r = confirm("Are you sure you want to delete this event booking? (WARNING: Can not be undone)");
+            if (r == true) {
+                deleteEvent();
+            } else {
+                return;
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <!-- Header dynamically loaded by common.js -->
+    <div id="header-load"></div>
+    <script>loadHeader("events-nav")</script>
+
+    <div id="content">
+        <div class="container-fluid">
+            <h4 id="bookingno" class='display-4'>
+                Booking Number
+            </h4>
+
+            <div class="form-group row">
+                <div class="col-sm-4">
+                        <button type="button" class="btn btn-danger" onclick="this.blur(); confirmDelete();">Delete Booking</button>
+                </div>
+            </div>
+            <form class="form ml-auto" onsubmit="return false">
+                <div class="form-group row">
+                    <label for="client" class="col-sm-2 col-form-label">Client Name</label>
+                    <div class="col-sm-10">
+                        <a href="#" id="client" name="client" class="form-control-plaintext" type="text">Client Name</a>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="venue" class="col-sm-2 col-form-label">Event Venue</label>
+                    <div class="col-sm-10">
+                        <input id="venue" name="venue" class="form-control-plaintext" type="text" value="Event Venue" readonly>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="address" class="col-sm-2 col-form-label">Location</label>
+                    <div class="col-sm-10">
+                        <input id="address" name="client" class="form-control-plaintext" type="text" value="Address" readonly>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="time" class="col-sm-2 col-form-label">Event Time</label>
+                    <div class="col-sm-10">
+                        <input id="time" name="time" class="form-control-plaintext" type="text" value="Time" readonly>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="duration" class="col-sm-2 col-form-label">Event Duration</label>
+                    <div class="col-sm-10">
+                        <input id="duration" name="duration" class="form-control-plaintext" type="text" value="Duration" readonly>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="attendees" class="col-sm-2 col-form-label">Number of Attendees</label>
+                    <div class="col-sm-10">
+                        <input id="attendees" name="attendees" class="form-control-plaintext" type="text" value="# Attendees" readonly>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="cost" class="col-sm-2 col-form-label">Total Cost</label>
+                    <div class="col-sm-10">
+                        <input id="cost" name="cost" class="form-control-plaintext" type="text" value="Total Cost" readonly>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="supply_count" class="col-sm-2 col-form-label"># of Ordered Supplies</label>
+                    <div class="col-sm-10">
+                        <input id="supply_count" name="supply_count" class="form-control-plaintext" type="text" value="Supply Count" readonly>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="booking_date" class="col-sm-2 col-form-label">Booked On</label>
+                    <div class="col-sm-10">
+                        <input id="booking_date" name="booking_date" class="form-control-plaintext" type="text" value="Booking Date" readonly>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="supplies" class="col-sm-2 col-form-label">Ordered Supplies</label>
+                    <table class="table table-hover mt-3" name="supplies">
+                        <thead>
+                            <tr>
+                                <th class="text-center">Supplier</th>
+                                <th class="text-center">Name</th>
+                                <th class="text-center">Quantity</th>
+                                <th class="text-center">Total Cost</th>
+                                <th class="text-center">Description</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="supply_data">
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+
+</html>

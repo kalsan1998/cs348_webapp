@@ -279,9 +279,10 @@ app.post('/create_billing', async (req, res) => {
     }
 });
 
-app.get('/client_event', async (req, res) => {
+
+app.get('/event', async (req, res) => {
     try {
-        const data = await db.getClientEvent(req.query);
+        const data = await db.getEvent(req.query);
         res.send(data);
     } catch (e) {
         console.log(e);
@@ -291,10 +292,20 @@ app.get('/client_event', async (req, res) => {
 
 app.post('/delete_event', async (req, res) => {
     try {
-        await db.deleteBillingInfo([req.body.billed_to, req.body.venue_id, req.body.event_datetime]);
+        await db.deleteEvent([req.body.billed_to, req.body.venue_id, req.body.event_datetime]);
         res.send(200);
     } catch (e) {
         // Probably should do better error handling.
+        console.log(e);
+        res.send(500);
+    }
+});
+
+app.get('/event_supply_order', async (req, res) => {
+    try {
+        const data = await db.getEventSupplyOrder(req.query);
+        res.send(data);
+    } catch (e) {
         console.log(e);
         res.send(500);
     }
