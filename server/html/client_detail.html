@@ -138,6 +138,8 @@
         }
 
         function updateClient() {
+            $("#err").remove();
+            $("#succ").remove();
             if ($('#phone')[0].value.length != 10 || 
                 ! $('#phone')[0].value.match(/^[0-9]*$/) ){
                 displayError("Phone number must be exactly 10 digits long.");

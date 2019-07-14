@@ -115,6 +115,51 @@ app.post('/delete_menu', async (req, res) => {
     }
 });
 
+// Entertainment related functions.
+app.get('/entertainment', async (req, res) => {
+    try {
+        const data = await db.getEntertainment(req.query);
+        res.send(data);
+    } catch (e) {
+        // Probably should do better error handling.
+        console.log(e);
+        res.send(500);
+    }
+});
+
+app.post('/create_entertainment', async (req, res) => {
+    try {
+        await db.insertEntertainment(req.body);
+        res.send(200);
+    } catch (e) {
+        // Probably should do better error handling.
+        console.log(e);
+        res.send(500);
+    }
+});
+
+app.post('/update_entertainment', async (req, res) => {
+    try {
+        const data = await db.updateEntertainment(req.body);
+        res.send(data);
+    } catch (e) {
+        // Probably should do better error handling.
+        console.log(e);
+        res.send(500);
+    }
+});
+
+app.post('/delete_entertainment', async (req, res) => {
+    try {
+        await db.deleteEntertainment([req.body.supplier_id, req.body.supply_name]);
+        res.send(200);
+    } catch (e) {
+        // Probably should do better error handling.
+        console.log(e);
+        res.send(500);
+    }
+});
+
 // Client related functions.
 app.get('/clients', async (req, res) => {
     try {

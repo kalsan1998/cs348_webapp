@@ -46,6 +46,8 @@
         }
 
         function getMenu() {
+            $("#err").remove();
+            $("#succ").remove();
 			$.get(
 				"/menu",
 				{

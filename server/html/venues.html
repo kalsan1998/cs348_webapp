@@ -41,6 +41,8 @@
             $(createVenueRowHtml(data)).appendTo($('#venue_data'));
         }
 		function getVenues() {
+            $("#err").remove();
+            $("#succ").remove();
 			// Make a call to db on load to get the venue data and display it
 			$.get(
 				"/venues",

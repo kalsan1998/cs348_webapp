@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Entertainment</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="common.css">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="common.js"></script>
+    <script>
+        $(document).ready(() => {
+            getEntertainment();
+
+            if (window.location.hash === '#success') {
+                displaySuccess("Successfully created a new entertainment option");
+                window.history.replaceState(null, "", "entertainment.html");
+            }
+        });
+
+        function createEntertainmentRowHtml(data) {
+            return `
+                <tr entry_id="${data['supplier_id']+'&'+data['supply_name']}">
+                    <td align="center">${data['company_name']}</td>
+                    <td align="center">${data['supply_name']}</td>
+                    <td align="center">${data['duration']}</td>
+                    <td align="center">${data['price_per_quantity']}</td>
+                    <td align="center">${data['description']}</td>
+                    <td align="center">
+                        <button class="btn edit-btn" onclick="editEntertainment('${data['supplier_id']+'&'+data['supply_name']}')"><span class="fa fa-pencil"></span></button>
+                        <button class="btn delete-btn" onclick="deleteEntertainment('${data['supplier_id']+'&'+data['supply_name']}')"><span class="fa fa-trash"></span></button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function insertEntertainmentRow(data) {
+            $(createEntertainmentRowHtml(data)).appendTo($('#entertainment_data'));
+        }
+
+        function getEntertainment() {
+            $("#err").remove();
+            $("#succ").remove();
+			$.get(
+				"/entertainment",
+				{
+					name : $('[name="name"]')[0].value,
+                    min_duration : $('[name="min_duration"]')[0].value,
+                    max_duration : $('[name="max_duration"]')[0].value
+				},
+				// data is an array of json objects
+				(data) => {
+					$('#entertainment_data > tr').remove();
+					for (var i = 0; i < data.length; i++) {
+						insertEntertainmentRow(data[i]);
+					}
+				},
+				'json'
+			).fail(() => {
+                displayError("Failed to retrieve data.");
+            });
+        }
+
+        function editEntertainment(edit_id) {
+            const row = $(`#entertainment_data > tr[entry_id="${edit_id}"]`).eq(0);
+            makeRowEditable(row, 'submitEntertainmentEdits', [0,1]);
+        }
+        
+        function submitEntertainmentEdits(edit_id) {
+            const data = $(`#entertainment_data > tr[entry_id="${edit_id}"] > td > input`);
+            const supplier_id = edit_id.split("&")[0];
+            const supply_name = edit_id.split("&")[1];
+            $.post(
+				"/update_menu",
+                {
+                    supplier_id : supplier_id,
+                    supply_name : supply_name,
+                    duration : data[0].value
+                },
+                // Success
+				(res) => {
+                    $(`#entertainment_data > tr[entry_id="${edit_id}"]`)
+                        .replaceWith(createEntertainmentRowHtml(res.rows[0]));
+				},
+			).fail((err) => {
+                displayError("Failed to update entertainment option.");
+            });
+        }
+        
+        function deleteEntertainment(del_id) {
+            const supplier_id = del_id.split("&")[0];
+            const supply_name = del_id.split("&")[1];
+			$.post(
+				"/delete_entertainment",
+				{
+                    supplier_id : supplier_id,
+                    supply_name : supply_name
+				},
+				() => {
+                    const row = $(`#entertainment_data > tr[entry_id="${del_id}"]`);
+					row.fadeOut('normal', () => {
+                        row.remove();
+                    });
+				},
+			).fail(() => {
+                displayError("Failed to delete entertainment option.");
+            });
+        }
+    </script>
+</head>
+<body>
+    <!-- Header dynamically loaded by common.js -->
+    <div id="header-load"></div>
+    <script>loadHeader("entertainment-nav")</script>
+	<div id="content">
+        <div id="filters" class="container-fluid">
+            <h3>Filters</h3>			
+                <div class="row filter-row">
+                    <div class="col">
+                        <label>Name</label>
+                        <input name="name" class="form-control" type="text" placeholder="Name">
+                    </div>
+                    
+                    <div class="col">
+                        <label>Minimum Duration</label>
+                        <input name="min_duration" class="form-control" type="text" placeholder="hh:mm">
+                    </div>
+
+                    <div class="col">
+                        <label>Maximum Duration</label>
+                        <input name="max_duration" class="form-control" type="text" placeholder="hh:mm">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <button type="submit" class="btn btn-success" onclick="this.blur(); getEntertainment()">Apply Filters</button>
+                    </div>
+                </div>
+        </div>
+        <div id="table-display">
+            <table class="table table-hover bm-4">
+                <thead>
+                    <tr>
+                        <th class="text-center">Supplier</th>
+                        <th class="text-center">Name</th>
+                        <th class="text-center">Duration</th>
+                        <th class="text-center">Price</th>
+                        <th class="text-center">Description</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="entertainment_data">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>
