@@ -18,7 +18,18 @@
             if (window.location.hash === '#success') {
                 displaySuccess("Successfully created a new decoration option");
                 window.history.replaceState(null, "", "decorations.html");
+            } else {
+                var url = new URL(window.location);
+                const supplier_name = url.searchParams.get("supplier_name");
+                const supply_name = url.searchParams.get("supply_name");
+                if (!supplier_name || !supply_name) {
+                } else {
+                    $('[name="name"]').val(supply_name);
+                    $('[name="supplier_name"]').val(supplier_name);
+                    window.history.replaceState(null, "", "decorations.html");
+                }
             }
+            
         });
 
         function createDecorationsRowHtml(data) {
@@ -48,6 +59,7 @@
 				"/decorations",
 				{
 					name : $('[name="name"]')[0].value,
+                    supplier_name : $('[name="supplier_name"]')[0].value,                    
                     type : $('[name="type"]')[0].value,
                     price : $('[name="price"]')[0].value
 				},
@@ -124,6 +136,11 @@
                     <div class="col">
                         <label>Name</label>
                         <input name="name" class="form-control" type="text" placeholder="Name">
+                    </div>
+
+                    <div class="col">
+                        <label>Supplier Name</label>
+                        <input name="supplier_name" class="form-control" type="text" placeholder="Supplier Name">
                     </div>
                     
                     <div class="col">

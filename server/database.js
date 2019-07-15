@@ -12,6 +12,11 @@ const pool = new pg.Pool({
 
 // Export the functions for use by server.js
 exports.getSupplierNames = getSupplierNames;
+exports.getSuppliers = getSuppliers;
+exports.getSupplierSupplies = getSupplierSupplies;
+exports.updateSupplier = updateSupplier;
+exports.addSupplier = addSupplier;
+exports.deleteSupplier = deleteSupplier;
 
 exports.getVenues = getVenues;
 exports.insertVenue = insertVenue;
@@ -97,9 +102,9 @@ async function updateVenue(params) {
 	`;
 	const vals = [params.id, params.name, params.address, params.capacity, params.price, params.description];
 	const client = await pool.connect();
-	const row = await client.query(query, vals);
+	const res = await client.query(query, vals);
 	await client.release();
-	return row;
+	return res.rows;
 }
 
 async function deleteVenue(id) {
@@ -116,6 +121,100 @@ async function getSupplierNames(params) {
 		company_name FROM supplier ORDER BY company_name;");
 	await client.release();
 	return res.rows;
+}
+
+async function getSuppliers(params) {
+	var clauses = [];
+	var vals = [];
+
+	// WHERE clause builder
+	if (params.company_name) {
+		clauses.push("s.company_name ILIKE $1");
+		vals.push('%' + params.company_name + '%');
+	}
+
+	if (params.supplier_id) {
+		clauses.push("s.supplier_id=$" + vals.length + 1);
+		vals.push(params.supplier_id);
+	}
+
+	// SELECT clause
+	query = `SELECT s.*, COALESCE(sc.supply_count, 0) supply_count 
+			FROM supplier s
+			LEFT JOIN (
+				SELECT supplier_id, COUNT(*) AS supply_count
+				FROM supply
+				GROUP BY supplier_id
+			) sc USING(supplier_id)`;
+	
+	// WHERE clause
+	if (clauses.length > 0) {
+		query += " WHERE " + clauses.join(" AND ");
+	}
+
+	// ORDER BY clause
+	query += " ORDER BY s.company_name;";
+
+    const client = await pool.connect();
+	const res = await client.query(query, vals);
+	await client.release();
+    return res.rows;
+}
+
+async function getSupplierSupplies(params) {
+	const query = `
+		SELECT s.supply_name, si.supply_type, s.description, s.price_per_quantity
+		FROM supply s JOIN (
+			SELECT supplier_id, supply_name, 'Menu Item' AS supply_type
+			FROM food_item
+			UNION
+			SELECT supplier_id, supply_name, 'Decoration' AS supply_type
+			FROM decoration
+			UNION
+			SELECT supplier_id, supply_name, 'Entertainment' AS supply_type
+			FROM entertainment
+		) si USING(supplier_id, supply_name)
+		WHERE supplier_id=$1
+		ORDER BY si.supply_type, s.supply_name;
+	`;
+
+	const client = await pool.connect();
+	const res = await client.query(query, [params.supplier_id]);
+	await client.release();
+    return res.rows;
+} 
+
+async function updateSupplier(params) {
+	var query = `
+		UPDATE supplier SET
+			company_address=$2,
+			company_phone=$3,
+			company_email=$4			
+		WHERE supplier_id=$1
+		RETURNING *;
+	`;
+	const vals = [params.supplier_id, params.company_address, params.company_phone, params.company_email];
+	const client = await pool.connect();
+	const res = await client.query(query, vals);
+	await client.release();
+	return res.rows;
+}
+
+async function addSupplier(params) {
+	var query = "INSERT INTO supplier(company_name, company_email, company_address, company_phone) \
+		VALUES($1, $2, $3, $4);";
+	var vals = [params.company_name, params.company_email, params.company_address, params.company_phone];
+	const client = await pool.connect();
+	await client.query(query, vals);
+    await client.release();
+}
+
+async function deleteSupplier(params) {
+	var query = 
+		`DELETE FROM supplier WHERE supplier_id=$1;`;
+	const client = await pool.connect();
+	await client.query(query, [params.supplier_id]);
+    await client.release();
 }
 
 async function insertSupply(params) {
@@ -174,6 +273,10 @@ async function getMenu(params) {
 		clauses.push("servings_per_quantity >= $" + (vals.length + 1));
 		vals.push(params.servings);
 	}
+	if (params.supplier_name) {
+		clauses.push("supplier.company_name ILIKE $" + (vals.length  + 1 ));
+		vals.push('%' + params.supplier_name + '%');
+	}
 	var query = "SELECT * FROM (food_item INNER JOIN supply ON food_item.supplier_id \
 		= supply.supplier_id) INNER JOIN supplier ON food_item.supplier_id = supplier.supplier_id \
 		AND food_item.supply_name = supply.supply_name";
@@ -224,9 +327,9 @@ async function updateMenu(params) {
 		supply.supplier_id=$1 AND supply.supply_name=$2";
 	const res_vals = [params.supplier_id, params.supply_name];
 
-	const row = await client.query(res_query, res_vals);
+	const res = await client.query(res_query, res_vals);
 	await client.release();
-	return row;
+	return res;
 }
 
 // |id| is a list of 2 elements: id[0] = supplier_id, id[1] = supply_name.
@@ -309,9 +412,9 @@ async function updateClient(params) {
 	`;
 	const vals = [params.email, params.home_address, params.phone_number];
 	const client = await pool.connect();
-	const row = await client.query(query, vals);
+	const res = await client.query(query, vals);
 	await client.release();
-	return row;
+	return res.rows;
 }
 
 async function addClient(params) {
@@ -403,6 +506,10 @@ async function getEntertainment(params) {
 		clauses.push("price_per_quantity <= $" + (vals.length + 1));
 		vals.push(params.price);
 	}
+	if (params.supplier_name) {
+		clauses.push("supplier.company_name ILIKE $" + (vals.length  + 1 ));
+		vals.push('%' + params.supplier_name + '%');
+	}
 	var query = "SELECT * FROM (entertainment INNER JOIN supply ON entertainment.supplier_id \
 		= supply.supplier_id) INNER JOIN supplier ON entertainment.supplier_id = supplier.supplier_id \
 		AND entertainment.supply_name = supply.supply_name";
@@ -445,9 +552,9 @@ async function updateEntertainment(params) {
 		supply.supplier_id=$1 AND supply.supply_name=$2";
 	const res_vals = [params.supplier_id, params.supply_name];
 
-	const row = await client.query(res_query, res_vals);
+	const res = await client.query(res_query, res_vals);
 	await client.release();
-	return row;
+	return res.rows;
 }
 
 async function deleteEntertainment(id) {
@@ -475,6 +582,10 @@ async function getDecorations(params) {
 	if(params.price) {
 		clauses.push("price_per_quantity <= $" + (vals.length + 1));
 		vals.push(params.price);
+	}
+	if (params.supplier_name) {
+		clauses.push("supplier.company_name ILIKE $" + (vals.length  + 1 ));
+		vals.push('%' + params.supplier_name + '%');
 	}
 	var query = "SELECT * FROM (decoration INNER JOIN supply ON decoration.supplier_id \
 		= supply.supplier_id) INNER JOIN supplier ON decoration.supplier_id = supplier.supplier_id \
@@ -518,9 +629,9 @@ async function updateDecorations(params) {
 		supply.supplier_id=$1 AND supply.supply_name=$2";
 	const res_vals = [params.supplier_id, params.supply_name];
 
-	const row = await client.query(res_query, res_vals);
+	const res = await client.query(res_query, res_vals);
 	await client.release();
-	return row;
+	return res.rows;
 }
 
 async function deleteDecorations(id) {

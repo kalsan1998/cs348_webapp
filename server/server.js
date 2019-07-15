@@ -70,6 +70,58 @@ app.get('/supplier_name', async (req, res) => {
     }
 });
 
+app.get('/suppliers', async (req, res) => {
+    try {
+        const data = await db.getSuppliers(req.query);
+        res.send(data);
+    } catch (e) {
+        console.log(e);
+        res.send(500);
+    }
+});
+
+app.get('/supplier_supplies', async (req, res) => {
+    try {
+        const data = await db.getSupplierSupplies(req.query);
+        res.send(data);
+    } catch (e) {
+        console.log(e);
+        res.send(500);
+    }
+});
+
+app.post('/update_supplier', async (req, res) => {
+    try {
+        const data = await db.updateSupplier(req.body);
+        res.send(data);
+    } catch (e) {
+        console.log(e);
+        res.send(500);
+    }
+});
+
+app.post('/create_supplier', async (req, res) => {
+    try {
+        await db.addSupplier(req.body);
+        res.send(200);
+    } catch (e) {
+        // Probably should do better error handling.
+        console.log(e);
+        res.send(500);
+    }
+});
+
+app.post('/delete_supplier', async (req, res) => {
+    try {
+        await db.deleteSupplier(req.body);
+        res.send(200);
+    } catch (e) {
+        // Probably should do better error handling.
+        console.log(e);
+        res.send(500);
+    }
+});
+
 // Food related code.
 app.get('/menu', async (req, res) => {
     try {

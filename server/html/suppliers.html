@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Suppliers List</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="common.css">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="common.js"></script>
+    <script>    
+        $(document).ready(() => {
+            getSuppliers();
+            if (window.location.hash === '#addsuccess') {
+                displaySuccess("Successfully added a new supplier");
+                window.history.replaceState(null, "", "suppliers.html");
+            }
+            if (window.location.hash === '#delete') {
+                displaySuccess("Successfully deleted supplier");
+                window.history.replaceState(null, "", "suppliers.html");
+            }
+        });
+
+        function createSupplierRowHtml(data) {
+            return `
+                <tr entry_id="${data['supplier_id']}">
+                    <td align="center">${data['company_name']}</td>
+                    <td align="center">${data['company_phone']}</td>
+                    <td align="center">${data['company_email']}</td>
+                    <td align="center">${data['company_address']}</td>
+                    <td align="center">${data['supply_count']}</td>                    
+                    <td align="center">
+                        <button class="btn edit-btn" onclick="supplierDetail('${data['supplier_id']}')"><span class="fa fa-info"></span></button>
+                    </td>
+                </tr>
+            `;
+        }
+        // Display data in the table on the html page
+        function insertSupplierRow(data) {
+            $(createSupplierRowHtml(data)).appendTo($('#suppliers_data'));
+        }
+		function getSuppliers() {
+            $("#err").remove();
+            $("#succ").remove();
+			// Make a call to db on load to get the venue data and display it
+			$.get(
+				"/suppliers",
+				{
+					company_name : $('[name="company_name"]')[0].value,
+				},
+				// data is an array of json objects
+				(data) => {
+					$('#suppliers_data > tr').remove();
+					for (var i = 0; i < data.length; i++) {
+						insertSupplierRow(data[i]);
+					}
+				},
+				'json'
+			).fail(() => {
+                displayError("Failed to retrieve data.");
+            });
+        }
+
+        function supplierDetail(supplier_id) {
+            const url = "supplier_detail.html?supplier_id=" + encodeURIComponent(supplier_id);
+            window.location = url;
+        }
+    </script>
+</head>
+<body>
+    <!-- Header dynamically loaded by common.js -->
+    <div id="header-load"></div>
+    <script>loadHeader("suppliers-nav")</script>
+	<div id="content">
+        <div id="filters" class="container-fluid">
+            <h3>Filters</h3>			
+                <div class="row filter-row">
+                    <div class="col-4">
+                        <label>Company Name</label>
+                        <input name="company_name" class="form-control" type="text" placeholder="Company Name">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <button type="submit" class="btn btn-success" onclick="this.blur(); getSuppliers()">Apply Filters</button>
+                    </div>
+                </div>
+        </div>
+        <div id="table-display">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th class="text-center">Company Name</th>
+                        <th class="text-center">Phone Number</th>
+                        <th class="text-center">Email Address</th>
+                        <th class="text-center">Company Address</th>
+                        <th class="text-center"># of Supply Items</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="suppliers_data">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>
