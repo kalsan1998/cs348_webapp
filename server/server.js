@@ -58,6 +58,16 @@ app.post('/delete_venue', async (req, res) => {
     }
 });
 
+app.get('/venue_options', async (req, res) => {
+    try {
+        const data = await db.getVenueOptions(req.query);
+        res.send(data);
+    } catch (e) {
+        console.log(e);
+        res.send(500);
+    }
+});
+
 // Supply related code.
 // Returns a list of supplier name.
 app.get('/supplier_name', async (req, res) => {
@@ -330,7 +340,6 @@ app.post('/create_billing', async (req, res) => {
         res.send(500);
     }
 });
-
 
 app.get('/event', async (req, res) => {
     try {

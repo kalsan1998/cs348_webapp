@@ -80,3 +80,15 @@ function revertRowEdit(row_id) {
     row.children().remove();
     row.append(hidden_div.children());
 }
+
+// Validates to regex yyyy-mm-dd
+function matchDateRegex(text) {
+    const dateReg = /^(19|20)\d\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$/;
+    return text.match(dateReg);
+}
+
+// Validates to regex hh:mm
+function matchTimeRegex(text) {
+    const timeReg = /^\d\d{0,1}:[0-5][0-9]$/
+    return text.match(timeReg);
+}

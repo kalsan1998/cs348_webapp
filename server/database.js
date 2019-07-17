@@ -22,6 +22,7 @@ exports.getVenues = getVenues;
 exports.insertVenue = insertVenue;
 exports.updateVenue = updateVenue;
 exports.deleteVenue = deleteVenue;
+exports.getVenueOptions = getVenueOptions;
 
 exports.getMenu = getMenu;
 exports.insertMenu = insertMenu;
@@ -112,6 +113,23 @@ async function deleteVenue(id) {
 	const client = await pool.connect();
 	await client.query(query, [id]);
     await client.release();
+}
+
+async function getVenueOptions(params) {
+	const query = `
+		SELECT venue_id, venue_name, cost_per_hour
+		FROM venue 
+		WHERE venue_id NOT IN (
+			SELECT venue_id
+			FROM event
+			WHERE event_datetime::date <> $1::date
+		)
+		AND max_capacity >= $2;
+	`;
+	const client = await pool.connect();
+	const res = await client.query(query, [params.data, params.attendees]);
+	await client.release();
+	return res.rows;
 }
 
 // Returns the comapny_name of all supplier.

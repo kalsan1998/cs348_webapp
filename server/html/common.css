@@ -49,3 +49,9 @@
 .cancel-edit-btn span{
     color: #d61111;
 }
+
+.scroll-area {
+    max-height: 130px;
+    overflow-y: auto;
+    height: auto !important;
+}

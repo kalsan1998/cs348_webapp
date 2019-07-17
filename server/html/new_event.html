@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Create Event</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="common.css">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="common.js"></script>
+    <script>
+        var email = null;
+        var venue_cost = 0.00;
+        var supplies_cost = 0.00;
+        var total_cost = 0.00;
+
+        $(document).ready(() => {
+            var url = new URL(window.location);
+            const e = url.searchParams.get("email");
+            if (!e) {
+                window.location = "events.html";
+            }
+            email = e;
+            const fullname = url.searchParams.get("fullname");
+            if (fullname) {
+                $('input[name="client_name"]').val(fullname);
+            }
+            fillBillingInformation();
+            fillMenuOptions();
+            fillDecorationOptions();
+            fillEntertainmentOptions();
+            updateVenueOptions();
+            $('#select-venue').on('change', () => {
+                updateVenueCost();
+            });
+        });
+
+        function insertBillingInformationEntry(data) {
+            $(`
+                <option value="${data['billing_id']}">XXXXXXXXXXXX${data['card_number'].substr(12)}</option>
+            `).appendTo($('#select-billing-info'));
+        }
+
+        function insertVenueOptionEntry(data) {
+            $(`
+                <option cost="${data['cost_per_hour']}" value="${data['venue_id']}">${data['venue_name']}</option>
+            `).appendTo($('#select-venue'))
+        }
+
+        function insertMenuOptionEntry(data) {
+            $(`
+                <div>
+                <input type="checkbox" type="checkbox"
+                    cost="${data['price_per_quantity']}" supply_name="${data['supply_name']}"
+                    supplier_id="${data['supplier_id']}" onclick="selectMenuOption(this);">
+                <label class="form-check-label">${data['company_name']}: ${data['supply_name']}</label>
+                </div>
+            `).appendTo($('#select-menu'))
+        }
+
+        function insertDecorationOptionEntry(data) {
+            $(`
+                <div>
+                <input type="checkbox"
+                    cost="${data['price_per_quantity']}" supply_name="${data['supply_name']}"
+                    supplier_id="${data['supplier_id']}" onclick="selectDecorationOption(this);">
+                <label class="form-check-label">${data['company_name']}: ${data['supply_name']}</label>
+                </div>
+            `).appendTo($('#select-decoration'))
+        }
+
+        function insertEntertainmentOptionEntry(data) {
+            $(`
+                <div>
+                <input type="checkbox" 
+                    cost="${data['price_per_quantity']}" duration="${data['duration']}" supply_name="${data['supply_name']}"
+                    supplier_id="${data['supplier_id']}" onclick="selectEntertainmentOption(this);">
+                <label class="form-check-label">${data['company_name']}: ${data['supply_name']}</label>
+                </div>
+            `).appendTo($('#select-entertainment'))
+        }
+
+        function fillBillingInformation() {
+            $.get(
+                "/client_billing",
+                {
+                    email : email,
+                },
+                (data) => {
+                    for (var i = 0; i < data.length; i++) {
+                        insertBillingInformationEntry(data[i]);
+                    }
+                }
+            ).fail((err) => {
+                displayError("Failed to retrieve billing data.");
+            });
+        }
+
+        function fillVenueOptions() {
+            $.get(
+                "/venue_options",
+                {
+                    attendees : $('input[name="attendees"]').val(),
+                    date : $('input[name="date"]').val(),
+                },
+                (data) => {
+                    for (var i = 0; i < data.length; i++) {
+                        insertVenueOptionEntry(data[i]);
+                    }
+                    updateVenueCost();
+                }
+            ).fail((err) => {
+                displayError("Failed to retrieve venue data.");
+            });
+        }
+
+        function fillMenuOptions() {
+            $.get(
+                "/menu",
+                {},
+                (data) => {
+                    for (var i = 0; i < data.length; i++) {
+                        insertMenuOptionEntry(data[i]);
+                    }
+                }
+            ).fail((err) => {
+                displayError("Failed to retrieve menu data.");
+            });
+        }
+
+        function fillDecorationOptions() {
+            $.get(
+                "/decorations",
+                {},
+                (data) => {
+                    for (var i = 0; i < data.length; i++) {
+                        insertDecorationOptionEntry(data[i]);
+                    }
+                }
+            ).fail((err) => {
+                displayError("Failed to retrieve decorations data.");
+            });
+        }
+
+        function fillEntertainmentOptions() {
+            $.get(
+                "/entertainment",
+                {},
+                (data) => {
+                    for (var i = 0; i < data.length; i++) {
+                        insertEntertainmentOptionEntry(data[i]);
+                    }
+                }
+            ).fail((err) => {
+                displayError("Failed to retrieve entertainment data.");
+            });
+        }
+
+        function createEvent() {
+            var params = {
+                    supplier_id : $('#select-billing-info').val(),
+                    supply_name : $('[name="name"]')[0].value,
+                    is_vegetarian : $('input[name="vegetarian"]').is(':checked'),
+                };
+            $.post(
+                "/create_event",
+                params,
+                // Success
+                (res) => {
+                    window.location.href = "events.html#success";
+                },
+            ).fail((err) => {
+                console.log(err);
+                displayError("Failed to create new Event");
+            });
+        }
+
+        function updateVenueOptions() {
+            const attendees = $('input[name="attendees"]').val();
+            const date = $('input[name="date"]').val();
+            if (!attendees || isNaN(attendees) || !matchDateRegex(date) || attendees < 0) {
+                $(`
+                    <option value="invalid" hidden>Invalid Date or Attendees</option>
+                `).prependTo('#select-venue');
+                $('#select-venue').attr('disabled', true).val('invalid');
+                updateVenueCost();
+            } else {
+                $('#select-venue > option').remove();
+                $('#select-venue').attr('disabled', false);
+                fillVenueOptions();
+            }  
+        }
+
+        function deselectSupplyOption(supplier_id, supply_name) {
+            $(`tr[supplier_id="${supplier_id}"][supply_name="${supply_name}"]`).remove();
+            $(`input[supplier_id="${supplier_id}"][supply_name="${supply_name}"]`).prop('checked', false);
+        }
+
+        function selectMenuOption(element) {
+            const supplier_id = $(element).attr('supplier_id');
+            const supply_name = $(element).attr('supply_name');
+            const cost = parseInt($(element).attr('cost'));
+
+            if ($(element).prop('checked')) {
+                supplies_cost += cost;
+                updateTotalCost();
+                $(`
+                    <tr supplier_id="${supplier_id}" supply_name="${supply_name}" unit_cost="${cost}">
+                        <td align="center">${supply_name}</td>
+                        <td name="qty" align="center"><input class="form-control" type="number" min="1" style="width:100%;" value="1"
+                             onchange="updateSupplyCost(${supplier_id},'${supply_name}')">
+                        </td>                        
+                        <td name="cost" align="center">${cost.toFixed(2)}</td>
+                        <td align="center">
+                            <button style="padding:0px;margin-top:-5px" onclick="deselectSupplyOption(${supplier_id},'${supply_name}')" class="btn cancel-edit-btn">
+                                <span class="fa fa-remove"></span>
+                            </button>
+                        </td>
+                    </tr>
+                `).appendTo('#selected-menu');
+            } else {
+                supplies_cost -= cost;
+                updateTotalCost();
+                deselectSupplyOption(supplier_id, supply_name);
+            }
+        }
+
+        function selectDecorationOption(element) {
+            const supplier_id = $(element).attr('supplier_id');
+            const supply_name = $(element).attr('supply_name');
+            const cost = parseInt($(element).attr('cost'));
+            if ($(element).prop('checked')) {
+                supplies_cost += cost;
+                updateTotalCost();
+                $(`
+                    <tr supplier_id="${supplier_id}" supply_name="${supply_name}" unit_cost="${cost}">
+                        <td align="center">${supply_name}</td>
+                        <td name="qty" align="center"><input class="form-control" type="number" min="1" style="width:100%;" value="1"
+                             onchange="updateSupplyCost(${supplier_id},'${supply_name}')">
+                        </td>
+                        <td name="cost" align="center">${cost.toFixed(2)}</td>
+                        <td align="center">
+                            <button style="padding:0px;margin-top:-5px" onclick="deselectSupplyOption(${supplier_id},'${supply_name}')" class="btn cancel-edit-btn">
+                                <span class="fa fa-remove"></span>
+                            </button>
+                        </td>
+                    </tr>
+                `).appendTo('#selected-decorations');
+            } else {
+                supplies_cost -= cost;
+                updateTotalCost();
+                deselectSupplyOption(supplier_id, supply_name);
+}
+        }
+
+        function selectEntertainmentOption(element) {
+            const supplier_id = $(element).attr('supplier_id');
+            const supply_name = $(element).attr('supply_name');
+            const cost = parseInt($(element).attr('cost'));
+
+            if ($(element).prop('checked')) {
+                supplies_cost += cost;
+                updateTotalCost();
+                $(`
+                    <tr supplier_id="${supplier_id}" supply_name="${supply_name}">
+                        <td align="center">${supply_name}</td>
+                        <td align="center">${$(element).attr('duration')}</td>
+                        <td align="center">${cost.toFixed(2)}</td>
+                        <td align="center">
+                            <button style="padding:0px;margin-top:-5px" onclick="deselectSupplyOption(${supplier_id},'${supply_name}')" class="btn cancel-edit-btn">
+                                <span class="fa fa-remove"></span>
+                            </button>
+                        </td>
+                    </tr>
+                `).appendTo('#selected-entertainment');
+            } else {
+                supplies_cost -= cost;
+                updateTotalCost();
+                deselectSupplyOption(supplier_id, supply_name);
+            }
+        }
+
+        function updateTotalCost() {
+            total_cost = venue_cost + supplies_cost;
+            $('input[name="total_cost"').val(total_cost.toFixed(2));
+        }
+
+        function updateSupplyCost(supplier_id, supply_name) {
+            const prev_cost = $(`tr[supplier_id="${supplier_id}"][supply_name="${supply_name}"] > td[name="cost"]`).html();
+            supplies_cost -= prev_cost;
+            const unit_cost = $(`tr[supplier_id="${supplier_id}"][supply_name="${supply_name}"]`).attr('unit_cost');
+            const qty = $(`tr[supplier_id="${supplier_id}"][supply_name="${supply_name}"] > td[name="qty"] > input`).val();
+
+            const new_cost = (unit_cost * qty);
+            $(`tr[supplier_id="${supplier_id}"][supply_name="${supply_name}"] > td[name="cost"]`).html(new_cost.toFixed(2));
+            supplies_cost += new_cost;
+            updateTotalCost();
+        }
+
+        function updateVenueCost() {
+            const val = $('#select-venue').val();
+            const cost = $(`#select-venue > option[value="${val}"]`).attr('cost');
+            const duration = $('input[name="duration"]').val();
+            if(cost && matchTimeRegex(duration)) {
+                const duration_vals = duration.split(':');
+                var hours = duration_vals[0];
+                if (duration_vals[1] > 0) hours++; //round up
+                venue_cost = cost * hours;
+            } else {
+                venue_cost = 0.00;
+            }
+            updateTotalCost();
+        }
+
+        function returnToClientDetail() {
+            var r = confirm("Are you sure you want to cancel?");
+            if (r) window.location = `client_detail.html?email=${email}`;
+        }
+    </script>
+</head>
+<body>
+    <!-- Header dynamically loaded by common.js -->
+    <div id="header-load"></div>
+    <script>loadHeader("client-nav")</script>
+
+	<div id="content">
+        <div class="container-fluid">
+            <div class="row">            
+                <div class="col-3">
+                <h6 id="header-message" class='display-4'>
+                    Book Event
+                </h6>
+                </div>
+                <div class="col">
+                    <button style="margin:20px;"type="submit" class="btn btn-success" onclick="this.blur(); createEvent()">Submit</button>
+                    <button type="button" class="btn btn-danger" onclick="this.blur(); returnToClientDetail();">Cancel</button>
+                </div>
+            </div>
+
+            <form class="form ml-auto" onsubmit="return false">
+                <div class="row">
+                    <div class="form-group col-3">
+                        <label>Client Name</label>
+                        <input class="form-control" name="client_name" type="text" value="" readonly>
+
+                    </div>
+
+                    <div class="form-group col-3">
+                        <label>Billing Information</label>
+                        <select class="form-control" id="select-billing-info">
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group col-3">
+                        <label>Event Date</label>
+                        <input name="date" class="form-control" type="text" placeholder="yyyy-mm-dd" onfocusout="updateVenueOptions()">
+                    </div>
+
+                    <div class="form-group col-3">
+                        <label>Event Time</label>
+                        <input name="time" class="form-control" type="text" placeholder="hh:mm">
+                    </div>
+
+                    <div class="form-group col-3">
+                        <label>Event Duration</label>
+                        <input name="duration" class="form-control" type="text" placeholder="hh:mm" onfocusout="updateVenueCost()">
+                    </div>
+
+                    <div class="form-group col-3">
+                        <label>Attendees</label>
+                        <input name="attendees" class="form-control" type="text" placeholder="Number of Attendess" onfocusout="updateVenueOptions()">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group col-3">
+                        <label>Available Venues</label>
+                        <select class="form-control" id="select-venue" disabled="true">
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="form-group col-3">
+                        <label>Menu Items</label>
+                        <div class="scroll-area form-control" id="select-menu">
+                        </div>
+                    </div>
+
+                    <div class="form-group col-3">
+                        <label>Decorations</label>
+                        <div class="scroll-area form-control" id="select-decoration">
+                        </div>
+                    </div>
+
+                    <div class="form-group col-3">
+                        <label>Entertainment</label>
+                        <div class="scroll-area form-control" id="select-entertainment">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-3">
+                        <table class="table table-hover mt-3" name="menu">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">Menu</th>
+                                    <th class="text-center">Quantity</th>
+                                    <th class="text-center">Price</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="selected-menu">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="form-group col-3">
+                        <table class="table table-hover mt-3" name="decorations">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">Decoration</th>
+                                    <th class="text-center">Quantity</th>
+                                    <th class="text-center">Price</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="selected-decorations">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="form-group col-3">
+                         <table class="table table-hover mt-3" name="entertainment">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">Entertainment</th>
+                                    <th class="text-center">Duration</th>
+                                    <th class="text-center">Price</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="selected-entertainment">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="form-group col-3">
+                        <label>Total Cost</label>
+                        <input class="form-control" name="total_cost" type="text" value="0.00" readonly>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

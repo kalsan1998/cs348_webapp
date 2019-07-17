@@ -14,6 +14,7 @@
     <script src="common.js"></script>
     <script>
         var email = null;
+        var client_fullname = null;
 
         $(document).ready(() => {
             var url = new URL(window.location);
@@ -84,6 +85,7 @@
                 // data is an array of json objects
                 (data) => {
                     const fullname = data[0]['first_name'] + ' ' + data[0]['last_name'];
+                    client_fullname = fullname;
                     $('#fullname').html(fullname);
                     $('#email').attr('value', data[0]['email']);
                     $('#address').val(data[0]['home_address']);
@@ -218,6 +220,10 @@
                 return;
             }
         }
+
+        function bookEvent() {
+            window.location = `new_event.html?email=${email}&fullname=${client_fullname}`;
+        }
     </script>
 </head>
 
@@ -301,7 +307,7 @@
                 <div class="form-group row">
                     <label for="events" class="col-2 col-form-label">Booked Events</label>
                     <div class="col-4">
-                        <button type="button" class="btn btn-primary" onclick="return false;">Book New
+                        <button type="button" class="btn btn-primary" onclick="this.blur(); bookEvent();">Book New
                             Event</button>
                     </div>
                     <table class="table table-hover mt-3" name="events">
