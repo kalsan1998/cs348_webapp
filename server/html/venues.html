@@ -96,9 +96,9 @@
                     description : data[4].value,
                 },
                 // Success
-				(res) => {
+				(rows) => {
                     $(`#venue_data > tr[entry_id="${edit_id}"]`)
-                        .replaceWith(createVenueRowHtml(res.rows[0]));
+                        .replaceWith(createVenueRowHtml(rows[0]));
 				},
 			).fail((err) => {
                 console.log(err);

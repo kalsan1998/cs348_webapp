@@ -95,9 +95,9 @@
                     description : data[2].value
                 },
                 // Success
-				(res) => {
+				(rows) => {
                     $(`#entertainment_data > tr[entry_id="${edit_id}"]`)
-                        .replaceWith(createEntertainmentRowHtml(res.rows[0]));
+                        .replaceWith(createEntertainmentRowHtml(rows[0]));
 				},
 			).fail((err) => {
                 displayError("Failed to update entertainment option.");

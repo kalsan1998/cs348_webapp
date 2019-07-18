@@ -106,9 +106,9 @@
                     description : data[6].value,
                 },
                 // Success
-				(res) => {
+				(rows) => {
                     $(`#menu_data > tr[entry_id="${edit_id}"]`)
-                        .replaceWith(createMenuRowHtml(res.rows[0]));
+                        .replaceWith(createMenuRowHtml(rows[0]));
 				},
 			).fail((err) => {
                 displayError("Failed to update Menu Item.");

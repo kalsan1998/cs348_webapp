@@ -95,9 +95,9 @@
                     description : data[2].value
                 },
                 // Success
-				(res) => {
+				(rows) => {
                     $(`#decorations_data > tr[entry_id="${edit_id}"]`)
-                        .replaceWith(createDecorationsRowHtml(res.rows[0]));
+                        .replaceWith(createDecorationsRowHtml(rows[0]));
 				},
 			).fail((err) => {
                 displayError("Failed to update decoration option.");

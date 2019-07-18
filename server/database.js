@@ -348,7 +348,7 @@ async function updateMenu(params) {
 
 	const res = await client.query(res_query, res_vals);
 	await client.release();
-	return res;
+	return res.rows;
 }
 
 // |id| is a list of 2 elements: id[0] = supplier_id, id[1] = supply_name.
