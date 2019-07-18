@@ -83,7 +83,7 @@
                 // data is an array of json objects
                 (data) => {
                     const book_no = (data[0]['billed_to'].toString() + data[0]['venue_id'].toString() + data[0]['event_datetime_id']).replace(/\s/g, "").replace(/:/g, "").replace(/-/g, ""); 
-                    $('#bookingno').html(book_no);
+                    $('#bookingno').html(`Booking #${book_no}`);
                     $('#client').html(data[0]['client_name']);
                     $('#venue').attr('value', data[0]['venue_name']);
                     $('#address').attr('value', data[0]['venue_address']);
@@ -219,7 +219,6 @@
                                 <th class="text-center">Quantity</th>
                                 <th class="text-center">Total Cost</th>
                                 <th class="text-center">Description</th>
-                                <th></th>
                             </tr>
                         </thead>
                         <tbody id="supply_data">

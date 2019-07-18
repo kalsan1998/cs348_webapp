@@ -49,6 +49,7 @@ exports.deleteBillingInfo = deleteBillingInfo;
 exports.addBillingInfo = addBillingInfo;
 
 exports.getEvent = getEvent;
+exports.addEvent = addEvent;
 exports.getEventSupplyOrder = getEventSupplyOrder;
 exports.deleteEvent = deleteEvent;
 
@@ -493,6 +494,51 @@ async function addBillingInfo(params) {
 	const client = await pool.connect();
 	await client.query(query, vals);
 	await client.release();
+}
+
+async function addEvent(params, supply_order) {
+	const insert_event = `
+		INSERT INTO event(billed_to, venue_id, event_datetime, event_duration,
+			attendees, manager, total_cost, booking_date)
+		VALUES($1, $2, $3, $4, $5, $6, $7, NOW());
+	`;
+	const insert_supply_order = `
+		INSERT INTO supply_order(billed_to, venue_id, event_datetime, supplier_id,
+			supply_name, supply_quantity, supply_cost)
+		VALUES($1, $2, $3, $4, $5, $6, $7);
+	`;
+	const event_vals = [
+		params.billed_to, 
+		params.venue_id,
+		params.event_datetime,
+		params.event_duration,
+		params.attendees,
+		params.manager,
+		params.total_cost
+	];
+	const client = await pool.connect();
+	try {
+		await client.query('BEGIN'); // Start transaction.
+		await client.query(insert_event, event_vals);
+		for (const order of supply_order) {
+			const order_vals = [
+				params.billed_to, 
+				params.venue_id,
+				params.event_datetime,
+				order.supplier_id,
+				order.supply_name,
+				order.supply_quantity,
+				order.supply_cost,
+			];
+			await client.query(insert_supply_order, order_vals);
+		}
+		await client.query('COMMIT');
+	} catch(e) {
+		await client.query('ROLLBACK');
+		throw e;
+	} finally {
+		await client.release();
+	}
 }
 
 // id[0] = billed_to, id[1] = venue_id, id[2] = event_datetime

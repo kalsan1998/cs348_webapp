@@ -351,6 +351,17 @@ app.get('/event', async (req, res) => {
     }
 });
 
+app.post('/book_event', async (req, res) => {
+    try {
+        await db.addEvent(req.body.event_params, req.body.supply_orders);
+        res.send(200);
+    } catch (e) {
+        // Probably should do better error handling.
+        console.log(e);
+        res.send(500);
+    }
+});
+
 app.post('/delete_event', async (req, res) => {
     try {
         await db.deleteEvent([req.body.billed_to, req.body.venue_id, req.body.event_datetime]);

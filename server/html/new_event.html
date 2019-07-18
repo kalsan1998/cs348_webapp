@@ -159,22 +159,60 @@
             });
         }
 
-        function createEvent() {
-            var params = {
-                    supplier_id : $('#select-billing-info').val(),
-                    supply_name : $('[name="name"]')[0].value,
-                    is_vegetarian : $('input[name="vegetarian"]').is(':checked'),
-                };
+        function bookEvent() {
+            const event_params = {
+                billed_to   : $('#select-billing-info').val(),
+                venue_id    : $('#select-venue').val(),
+                event_datetime : $('input[name="date"]').val() + " " + $('input[name="time"]').val(),
+                event_duration : $('input[name="duration"]').val(),
+                attendees   : $('input[name="attendees"]').val(),
+                manager     : 'kalsan@uwaterloo.ca',
+                total_cost  : total_cost, 
+            };
+            const supply_orders = [];
+            const selected_menu = $('#selected-menu > tr');
+            selected_menu.each((i, el) => {
+                const order_params = {
+                    supplier_id : $(el).attr('supplier_id'),
+                    supply_name : $(el).attr('supply_name'),
+                    supply_quantity : $(el).children('td[name="qty"]').children('input').val(),
+                    supply_cost : $(el).children('td[name="cost"]').text(),
+                }
+                supply_orders.push(order_params);
+            });
+            const selected_decor = $('#selected-decorations > tr');
+            selected_decor.each((i, el) => {
+                const order_params = {
+                    supplier_id : $(el).attr('supplier_id'),
+                    supply_name : $(el).attr('supply_name'),
+                    supply_quantity : $(el).children('td[name="qty"]').children('input').val(),
+                    supply_cost : $(el).children('td[name="cost"]').text(),
+                }
+                supply_orders.push(order_params);
+            });
+            const selected_entertainment = $('#selected-entertainment > tr');
+            selected_entertainment.each((i, el) => {
+                const order_params = {
+                    supplier_id : $(el).attr('supplier_id'),
+                    supply_name : $(el).attr('supply_name'),
+                    supply_quantity : 1,
+                    supply_cost : $(el).children('td[name="cost"]').text(),
+                }
+                supply_orders.push(order_params);
+            });
             $.post(
-                "/create_event",
-                params,
+                "/book_event",
+                {
+                    event_params : event_params,
+                    supply_orders : supply_orders,
+                },
                 // Success
                 (res) => {
                     window.location.href = "events.html#success";
                 },
             ).fail((err) => {
                 console.log(err);
-                displayError("Failed to create new Event");
+                displayError("Failed to book event");
             });
         }
 
@@ -253,7 +291,7 @@
                 supplies_cost -= cost;
                 updateTotalCost();
                 deselectSupplyOption(supplier_id, supply_name);
-}
+            }
         }
 
         function selectEntertainmentOption(element) {
@@ -268,7 +306,7 @@
                     <tr supplier_id="${supplier_id}" supply_name="${supply_name}">
                         <td align="center">${supply_name}</td>
                         <td align="center">${$(element).attr('duration')}</td>
-                        <td align="center">${cost.toFixed(2)}</td>
+                        <td name="cost" align="center">${cost.toFixed(2)}</td>
                         <td align="center">
                             <button style="padding:0px;margin-top:-5px" onclick="deselectSupplyOption(${supplier_id},'${supply_name}')" class="btn cancel-edit-btn">
                                 <span class="fa fa-remove"></span>
@@ -335,7 +373,7 @@
                 </h6>
                 </div>
                 <div class="col">
-                    <button style="margin:20px;"type="submit" class="btn btn-success" onclick="this.blur(); createEvent()">Submit</button>
+                    <button style="margin:20px;"type="submit" class="btn btn-success" onclick="this.blur(); bookEvent();">Submit</button>
                     <button type="button" class="btn btn-danger" onclick="this.blur(); returnToClientDetail();">Cancel</button>
                 </div>
             </div>

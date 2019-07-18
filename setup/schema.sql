@@ -97,7 +97,7 @@ CREATE TABLE event(
   billed_to SERIAL,
   venue_id SERIAL,
   event_datetime TIMESTAMP,
-  event_duration TIME,
+  event_duration TIME NOT NULL,
   attendees INTEGER NOT NULL,
   manager VARCHAR(24) NOT NULL,
   total_cost DECIMAL(7,2) NOT NULL,
@@ -115,7 +115,7 @@ CREATE TABLE supply_order(
   supplier_id SERIAL,
   supply_name VARCHAR(24),
   supply_quantity INTEGER NOT NULL,
-  supply_cost DECIMAL(6,2) NOT NULL,
+  supply_cost DECIMAL(8,2) NOT NULL,
   PRIMARY KEY (billed_to, venue_id, event_datetime, supplier_id, supply_name),
   FOREIGN KEY (billed_to, venue_id, event_datetime) REFERENCES event (billed_to, venue_id, event_datetime) ON DELETE CASCADE ON UPDATE CASCADE,
   FOREIGN KEY (supplier_id, supply_name) REFERENCES supply (supplier_id, supply_name) ON DELETE CASCADE ON UPDATE CASCADE
