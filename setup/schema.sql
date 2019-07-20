@@ -82,10 +82,11 @@ CREATE TABLE client(
 
 CREATE TABLE billing_information(
   billing_id SERIAL,
-  card_number CHAR(16) NOT NULL,
-  expiration_date CHAR(4) NOT NULL,cardholder_name VARCHAR(30) NOT NULL,
+  card_number CHAR(16) NOT NULL UNIQUE,
+  expiration_date CHAR(4) NOT NULL,
   cardholder_name VARCHAR(64) NOT NULL,
   billing_address VARCHAR(256) NOT NULL,
+  cvv CHAR(3) NOT NULL,
   client_email VARCHAR(256) NOT NULL,
   date_added DATE NOT NULL,
   PRIMARY KEY (billing_id),
