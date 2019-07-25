@@ -123,12 +123,13 @@ async function getVenueOptions(params) {
 		WHERE venue_id NOT IN (
 			SELECT venue_id
 			FROM event
-			WHERE event_datetime::date <> $1::date
+			WHERE event_datetime::date >= $1::date
+            AND event_datetime::date < ($1::date + '1 day'::interval)
 		)
 		AND max_capacity >= $2;
 	`;
 	const client = await pool.connect();
-	const res = await client.query(query, [params.data, params.attendees]);
+	const res = await client.query(query, [params.date, params.attendees]);
 	await client.release();
 	return res.rows;
 }
